@@ -164,6 +164,7 @@ nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, st
 
 void area_division::initialize_cps (map<string, vector<int>> cpss)
 {
+    ROS_INFO("First step inside...");
     // initialize
     nr = 0;
     cps.clear();
@@ -171,26 +172,26 @@ void area_division::initialize_cps (map<string, vector<int>> cpss)
     A.resize(rows*cols);
     regions.clear();
     regions.resize(cpss.size());
-
+    ROS_INFO("Second step inside...");
     // place cpss in the map
     for (auto c : cpss) {
         // divison algorithm assumes origin at top left
         int x = c.second[0];
         int y = c.second[1];
-
+        ROS_INFO("Third step inside...");
         // index of position in grid map
         int idx = y * cols + x;
-
+        ROS_INFO("Fourth step inside...");
         ROS_DEBUG("CPS %d (%s) at (%d,%d) index %d", nr, c.first.c_str(), x, y, idx);
 
         // place cps in data structures
         gridmap[idx] = numeric_limits<signed char>::max();
         A[idx] = nr;
-
+        ROS_INFO("Fifth step inside...");
         // store cps position and mapping of uuid
         cps.push_back(initializer_list<int>{x,y});
         uuid_map[c.first] = nr;
-
+        ROS_INFO("Sixth step inside...");
         // count number of cpss
         nr++;
     }
@@ -208,6 +209,12 @@ void area_division::initialize_map (int r, int c, vector<signed char> src)
     for (int i=0; i<gridmap.size(); ++i)
         if (gridmap[i] >= 50)
             ++ob;
+        else if (gridmap[i]==-1)
+        {
+            gridmap[i]=100;
+            ++ob;}
+        else
+            gridmap[i]=0;
 
     ROS_DEBUG("There are %d occupied cells.", ob);
 }
