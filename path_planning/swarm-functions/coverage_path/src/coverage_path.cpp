@@ -171,7 +171,7 @@ int main (int argc, char **argv)
   
 
     // Subscribers for the divided maps
-    ros::Subscriber robot1_sub = nh.subscribe("robot1_grid", 10, robot1GridCallback);
+    ros::Subscriber robot1_sub = nh.subscribe("/area_division/robot1_grid", 10, robot1GridCallback);
     // ros::Subscriber robot2_sub = nh.subscribe("robot2_grid", 10, robot2GridCallback);
     // ros::Subscriber robot3_sub = nh.subscribe("robot3_grid", 10, robot3GridCallback);
 
