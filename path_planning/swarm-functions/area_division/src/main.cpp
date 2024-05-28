@@ -6,99 +6,50 @@
 #include <map>
 #include <string>
 
-
+// Global variables to store the current map and a flag to check if the map is received
 nav_msgs::OccupancyGrid current_map;
 bool map_received = false;
 
-map<string, vector<int>> cps_positions = {
+// Define the positions for the robots (this can be dynamic)
+std::map<std::string, std::vector<int>> cps_positions = {
     {"robot1", {214, 2}}
-    // {"robot2", {194, 5}}, 
-    // {"robot3", {130,60}}
+    // {"robot2", {214, 5}}, 
+    // {"robot3", {220,9}}
 };
 
-
-
-// void processMap(const ros::Publisher& robot1_pub, const ros::Publisher& R1_start_pos_pub) {
-//     if (map_received) {
-//         ROS_INFO("Processing received map...");
-
-//         // Initialize map in area_division object
-//         ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
-//         ad.initialize_cps(cps_positions);
-//         ad.divide();
-
-//         // Get the divided maps
-//         nav_msgs::OccupancyGrid robot1_grid = ad.get_grid(current_map, "robot1");
-
-//         // Publish the divided maps
-//         robot1_pub.publish(robot1_grid);
-
-//         // Access the coordinates of the robots
-//         std::vector<int> coordinates_R1 = cps_positions["robot1"];
-
-//         // Create geometry_msgs::Point messages for starting positions
-//         geometry_msgs::Point point_R1;
-//         point_R1.x = coordinates_R1[0];
-//         point_R1.y = coordinates_R1[1];
-
-//         // Publish the starting points
-//         R1_start_pos_pub.publish(point_R1);
-
-//         map_received = false; // Reset flag
-//         ROS_INFO("Map processing complete.");
-//     }
-// }
-
-
+// Callback function for receiving the map
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
-    cps_positions = {
-        {"robot1", {214, 2}}
-        // {"robot2", {194, 5}},
-        // {"robot3", {130, 60}}
-    };
     current_map = *msg;
     map_received = true;
     ROS_INFO("Map received: width=%d, height=%d", current_map.info.width, current_map.info.height);
-    //processMap();
 }
 
 int main(int argc, char **argv) {
-
-    ROS_INFO("First step...");
+    // Initialize ROS
     ros::init(argc, argv, "area_division_node");
     ros::NodeHandle nh;
-    ROS_INFO("Second step...");
+
+    // Get the number of robots from the parameter server or default to 1
+    int num_robots;
+    nh.param("num_robots", num_robots, 1);
+
+    // Initialize area division object
     area_division ad;
-    ROS_INFO("Third step...");
-    // Initialize CPS positions
-    nav_msgs::OccupancyGrid robot1_grid;
-    ROS_INFO("Fourth step...");
-    
-    ROS_INFO("Fifth step...");
-    // Access the coordinates of the robots
-    std::vector<int> coordinates_R1 = cps_positions["robot1"];
-    // std::vector<int> coordinates_R2 = cps_positions["robot2"];
-    // std::vector<int> coordinates_R3 = cps_positions["robot3"];
 
-    // Create geometry_msgs::Point messages for starting positions
-    geometry_msgs::Point point_R1, point_R2, point_R3;
-    point_R1.x = coordinates_R1[0];
-    point_R1.y = coordinates_R1[1];
-    // point_R2.x = coordinates_R2[0];
-    // point_R2.y = coordinates_R2[1];
-    // point_R3.x = coordinates_R3[0];
-    // point_R3.y = coordinates_R3[1];
-    ROS_INFO("Sixth step...");
-    // Publishers for the divided maps
-    ros::Publisher robot1_pub = nh.advertise<nav_msgs::OccupancyGrid>("robot1_grid", 10);
-    // ros::Publisher robot2_pub = nh.advertise<nav_msgs::OccupancyGrid>("robot2_grid", 10);
-    // ros::Publisher robot3_pub = nh.advertise<nav_msgs::OccupancyGrid>("robot3_grid", 10);
+    // Create publishers for each robot
+    std::map<std::string, ros::Publisher> robot_pubs;
+    std::map<std::string, ros::Publisher> start_pos_pubs;
 
-    // Publishers for the starting points
-    ros::Publisher R1_start_pos_pub = nh.advertise<geometry_msgs::Point>("R1_starting_pos", 10);
-    // ros::Publisher R2_start_pos_pub = nh.advertise<geometry_msgs::Point>("R2_starting_pos", 1);
-    // ros::Publisher R3_start_pos_pub = nh.advertise<geometry_msgs::Point>("R3_starting_pos", 1);
-    ROS_INFO("Seventh step...");
+    for (int i = 0; i < num_robots; i++) {
+        std::string robot_name = "robot" + std::to_string(i + 1);
+
+        ros::Publisher robot_pub = nh.advertise<nav_msgs::OccupancyGrid>(robot_name + "_grid", 10);
+        ros::Publisher start_pos_pub = nh.advertise<geometry_msgs::Point>(robot_name + "_starting_pos", 1);
+
+        robot_pubs[robot_name] = robot_pub;
+        start_pos_pubs[robot_name] = start_pos_pub;
+    }
+
     // Subscriber for the occupancy grid map
     ros::Subscriber map_sub = nh.subscribe("/map", 10, mapCallback);
 
@@ -106,36 +57,47 @@ int main(int argc, char **argv) {
     while (ros::ok()) {
         if (map_received) {
             ROS_INFO("Processing received map...");
+
+            // Initialize the map in the area_division object
             ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
 
-            ad.initialize_cps(cps_positions);
+            // Initialize CPS positions (ensure it's updated based on the number of robots)
+            std::map<std::string, std::vector<int>> updated_cps_positions;
+            for (int i = 0; i < num_robots; i++) {
+                std::string robot_name = "robot" + std::to_string(i + 1);
+                updated_cps_positions[robot_name] = cps_positions[robot_name];
+            }
+            ad.initialize_cps(updated_cps_positions);
+
             // Perform area division
             ad.divide();
 
-            // Get the divided maps
-            robot1_grid = ad.get_grid(current_map, "robot1");
+            // Create geometry_msgs::Point messages for starting positions and publish divided maps
+            for (int i = 0; i < num_robots; i++) {
+                std::string robot_name = "robot" + std::to_string(i + 1);
+                
+                // Get the divided map for the robot
+                nav_msgs::OccupancyGrid robot_grid = ad.get_grid(current_map, robot_name);
 
-            for (size_t i = 0; i < current_map.data.size(); ++i) {
-            if (current_map.data[i] == -1) {
-                robot1_grid.data[i] = 100;
+                // Ensure obstacles are marked
+                for (size_t j = 0; j < current_map.data.size(); ++j) {
+                    if (current_map.data[j] == -1) {
+                        robot_grid.data[j] = 100;
+                    }
+                }
+
+                // Publish the divided map
+                robot_pubs[robot_name].publish(robot_grid);
+
+                // Create and publish starting point
+                std::vector<int> coordinates = updated_cps_positions[robot_name];
+                geometry_msgs::Point start_point;
+                start_point.x = coordinates[0];
+                start_point.y = coordinates[1];
+                start_pos_pubs[robot_name].publish(start_point);
             }
-            }
 
-
-            // nav_msgs::OccupancyGrid robot2_grid = ad.get_grid(current_map, "robot2");
-            // nav_msgs::OccupancyGrid robot3_grid = ad.get_grid(current_map, "robot3");
-
-            // Publish the divided maps
-            robot1_pub.publish(robot1_grid);
-            // robot2_pub.publish(robot2_grid);
-            // robot3_pub.publish(robot3_grid);
-
-            // Publish the starting points
-            R1_start_pos_pub.publish(point_R1);
-            // R2_start_pos_pub.publish(point_R2);
-            // R3_start_pos_pub.publish(point_R3);
-
-            map_received = false; // Reset flag
+            map_received = false; // Reset the flag
             ROS_INFO("Map processing complete.");
         }
 
@@ -145,12 +107,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-
-            // std::vector<std::pair<int, int>> zero_indices = findZeroIndices(current_map);
-
-            // // Logging zero indices
-            // ROS_INFO("Zero value indices:");
-            // for (const auto& idx : zero_indices) {
-            //     ROS_INFO("(%d, %d)", idx.first, idx.second);
-            // }
