@@ -6,7 +6,7 @@ area_division::area_division ()
     NodeHandle nh;
     nh.param(this_node::getName() + "/optimizer/iterations", max_iter, 1000);
     nh.param(this_node::getName() + "/optimizer/variate_weight", variate_weight, 0.01);
-    nh.param(this_node::getName() + "/optimizer/discrepancy", discr, 30);
+    nh.param(this_node::getName() + "/optimizer/discrepancy", discr, 100);
 }
 
 void area_division::divide ()
@@ -140,21 +140,29 @@ nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, st
 {
     // create new grid map
     nav_msgs::OccupancyGrid assigned;
-    assigned = map;
+    //ssigned.data = gridmap;
+    //assigned.data=gridmap
+    assigned.data=[0,100,0,0,0,100]
+    // for (int i=0; i<rows; i++) {
+    //     for (int j=0; j<cols;j++) {
+    //         if (gridmap[i*cols+j]==127){
+    //             assigned.data[i*cols+j]=100
+    //         }
+    //         // mark assigned cells as free
+    //         else if (A[i*cols+j] == uuid_map[cps]) {
+    //             assigned.data[i*cols+j] = CELL_FREE;
+    //         }
 
-    for (int i=0; i<rows; i++) {
-        for (int j=0; j<cols;j++) {
-            // mark assigned cells as free
-            if (A[i*cols+j] == uuid_map[cps]) {
-                assigned.data[i*cols+j] = CELL_FREE;
-            }
+    //         // mark cells assigned to other cpss as obstacles
+    //         else {  // Ensure to skip the special value
+    //             assigned.data[i*cols+j] = 100;
+    //         }
 
-            // mark cells assigned to other cpss as obstacles
-            else {
-                assigned.data[i*cols+j] = CELL_OCCUPIED;
-            }
-        }
-    }
+    //         // else {
+    //         //     assigned.data[i*cols+j] = CELL_OCCUPIED;
+    //         // }
+    //  }
+    //  }
 
     assigned.header.stamp = Time::now();
     assigned.info.map_load_time == Time::now();
@@ -184,6 +192,12 @@ void area_division::initialize_cps (map<string, vector<int>> cpss)
         ROS_INFO("Fourth step inside...");
         ROS_DEBUG("CPS %d (%s) at (%d,%d) index %d", nr, c.first.c_str(), x, y, idx);
 
+        if (gridmap[idx] == 127) {
+            ROS_WARN("Skipping CPS %s at (%d, %d) due to unexplored cell", c.first.c_str(), x, y);
+            continue;
+        }
+
+
         // place cps in data structures
         gridmap[idx] = numeric_limits<signed char>::max();
         A[idx] = nr;
@@ -211,7 +225,7 @@ void area_division::initialize_map (int r, int c, vector<signed char> src)
             ++ob;
         else if (gridmap[i]==-1)
         {
-            gridmap[i]=100;
+            gridmap[i]=127;
             ++ob;}
         else
             gridmap[i]=0;
@@ -221,6 +235,9 @@ void area_division::initialize_map (int r, int c, vector<signed char> src)
 
 void area_division::assign (vector<valarray<double>> matrix)
 {
+    
+    
+    
     BWlist.resize(nr);
     for (int r=0; r<nr; r++) {
         BWlist[r].resize(rows*cols);
@@ -250,9 +267,13 @@ void area_division::assign (vector<valarray<double>> matrix)
             }
 
             // obstacle
-            else if (gridmap[i*cols+j] < numeric_limits<signed char>::max()) {
+            else if (gridmap[i*cols+j] >= 50 && gridmap[i*cols+j] != 127) {  // Ensure to skip the special value
                 A[i*cols+j] = nr;
             }
+
+            // else if (gridmap[i*cols+j] < numeric_limits<signed char>::max()) {
+            //     A[i*cols+j] = nr;
+            // }
         }
     }
 }
@@ -264,16 +285,20 @@ valarray<float> area_division::CalcConnectedMultiplier(valarray<float> dist1, va
     float MinV = numeric_limits<float>::max();
     for (int i=0;i<rows;i++){
         for (int j=0;j<cols;j++){
+            if(gridmap[i*cols+j]!=127){
             returnM[i*cols+j] = dist1[i*cols+j] - dist2[i*cols+j];
             if (MaxV < returnM[i*cols+j]) {MaxV = returnM[i*cols+j];}
             if (MinV > returnM[i*cols+j]) {MinV = returnM[i*cols+j];}
+        }
         }
     }
 
     for (int i=0;i<rows;i++){
         for (int j=0;j<cols;j++){
+            if(gridmap[i*cols+j]!=127){
             returnM[i*cols+j] =(returnM[i*cols+j] - MinV)*((2*(float)variate_weight)/(MaxV-MinV))+(1-(float)variate_weight);
         }
+    }
     }
 
     return  returnM;
