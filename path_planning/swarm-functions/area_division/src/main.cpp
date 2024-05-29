@@ -64,9 +64,10 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "area_division_node");
     ros::NodeHandle nh;
 
-    // Get the number of robots from the parameter server or default to 1
-    int num_robots;
-    nh.param("num_robots", num_robots, 1);
+    // // Get the number of robots from the parameter server or default to 1
+    // int num_robots;
+    // nh.param("num_robots", num_robots, 1);
+    // Not needed since we have num_robots_detected now
 
     // Initialize area division object
     area_division ad;
