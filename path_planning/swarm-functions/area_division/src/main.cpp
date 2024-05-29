@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/Point.h>
+#include <tf/transform_listener.h>
 #include <vector>
 #include <map>
 #include <string>
@@ -10,18 +11,52 @@
 nav_msgs::OccupancyGrid current_map;
 bool map_received = false;
 
-// Define the positions for the robots (this can be dynamic)
-std::map<std::string, std::vector<int>> cps_positions = {
-    {"robot1", {214, 2}}
-    // {"robot2", {214, 5}}, 
-    // {"robot3", {220,9}}
-};
-
 // Callback function for receiving the map
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     current_map = *msg;
     map_received = true;
     ROS_INFO("Map received: width=%d, height=%d", current_map.info.width, current_map.info.height);
+}
+
+bool getRobotPosition(tf::TransformListener &listener, const std::string &robot_frame, geometry_msgs::Point &position) {
+    tf::StampedTransform transform_base_to_odom, transform_odom_to_map;
+    try {
+        // First check if the robot frame directly transforms to the odom frame
+        listener.waitForTransform("odom", robot_frame, ros::Time(0), ros::Duration(3.0));
+        listener.lookupTransform("odom", robot_frame, ros::Time(0), transform_base_to_odom);
+
+        // Look up the transform from the odom frame to the map frame
+        listener.waitForTransform("map", "odom", ros::Time(0), ros::Duration(3.0));
+        listener.lookupTransform("map", "odom", ros::Time(0), transform_odom_to_map);
+
+        // Combine the transformations to get the robot's position in the map frame
+        tf::Transform transform_combined = transform_odom_to_map * transform_base_to_odom;
+
+        position.x = transform_combined.getOrigin().x();
+        position.y = transform_combined.getOrigin().y();
+        position.z = transform_combined.getOrigin().z();
+        return true;
+    } catch (tf::TransformException &ex) {
+        ROS_ERROR("Could not get transform for %s: %s", robot_frame.c_str(), ex.what());
+        return false;
+    }
+}
+
+std::vector<std::string> getRobotFrames(tf::TransformListener &listener) {
+    std::vector<std::string> robot_frames;
+    std::vector<std::string> all_frames;
+    
+    listener.getFrameStrings(all_frames);
+
+    ROS_INFO("Available frames:");
+    for (const auto& frame : all_frames) {
+        ROS_INFO("%s", frame.c_str());
+        if (frame.find("base_link") != std::string::npos) {
+            robot_frames.push_back(frame);
+        }
+    }
+    
+    return robot_frames;
 }
 
 int main(int argc, char **argv) {
@@ -36,12 +71,33 @@ int main(int argc, char **argv) {
     // Initialize area division object
     area_division ad;
 
+    // Create a TransformListener
+    tf::TransformListener tf_listener;
+
+    // Retry mechanism to get robot frames
+    std::vector<std::string> robot_frames;
+    for (int i = 0; i < 5; ++i) { // Retry up to 5 times
+        ROS_INFO("Attempting to get robot frames, try %d", i + 1);
+        robot_frames = getRobotFrames(tf_listener);
+        if (!robot_frames.empty()) {
+            break;
+        }
+        ros::Duration(2.0).sleep(); // Sleep for 2 seconds before retrying
+    }
+
+    int num_robots_detected = robot_frames.size();
+
+    if (num_robots_detected == 0) {
+        ROS_ERROR("No robot frames found.");
+        return 1;
+    }
+
     // Create publishers for each robot
     std::map<std::string, ros::Publisher> robot_pubs;
     std::map<std::string, ros::Publisher> start_pos_pubs;
 
-    for (int i = 0; i < num_robots; i++) {
-        std::string robot_name = "robot" + std::to_string(i + 1);
+    for (const auto& robot_frame : robot_frames) {
+        std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
 
         ros::Publisher robot_pub = nh.advertise<nav_msgs::OccupancyGrid>(robot_name + "_grid", 10);
         ros::Publisher start_pos_pub = nh.advertise<geometry_msgs::Point>(robot_name + "_starting_pos", 1);
@@ -61,11 +117,17 @@ int main(int argc, char **argv) {
             // Initialize the map in the area_division object
             ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
 
-            // Initialize CPS positions (ensure it's updated based on the number of robots)
+            // Get robot positions using tf
             std::map<std::string, std::vector<int>> updated_cps_positions;
-            for (int i = 0; i < num_robots; i++) {
-                std::string robot_name = "robot" + std::to_string(i + 1);
-                updated_cps_positions[robot_name] = cps_positions[robot_name];
+            for (const auto& robot_frame : robot_frames) {
+                std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
+
+                geometry_msgs::Point position;
+                if (getRobotPosition(tf_listener, robot_frame, position)) {
+                    updated_cps_positions[robot_name] = {static_cast<int>(position.x), static_cast<int>(position.y)};
+                } else {
+                    ROS_ERROR("Failed to get position for %s", robot_name.c_str());
+                }
             }
             ad.initialize_cps(updated_cps_positions);
 
@@ -73,9 +135,9 @@ int main(int argc, char **argv) {
             ad.divide();
 
             // Create geometry_msgs::Point messages for starting positions and publish divided maps
-            for (int i = 0; i < num_robots; i++) {
-                std::string robot_name = "robot" + std::to_string(i + 1);
-                
+            for (const auto& robot_frame : robot_frames) {
+                std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
+
                 // Get the divided map for the robot
                 nav_msgs::OccupancyGrid robot_grid = ad.get_grid(current_map, robot_name);
 
