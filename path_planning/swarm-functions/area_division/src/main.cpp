@@ -95,12 +95,16 @@ int main(int argc, char **argv) {
     // Create publishers for each robot
     std::map<std::string, ros::Publisher> robot_pubs;
     std::map<std::string, ros::Publisher> start_pos_pubs;
+    for (int i = 0; i < num_robots_detected; i++) {
+        std::string robot_name = "robot" + std::to_string(i + 1);
 
-    for (const auto& robot_frame : robot_frames) {
-        std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
+    
+        std::string grid_topic = "/" + robot_name + "_grid";
+        std::string start_pos_topic = "/" + robot_name + "_starting_pos";
 
-        ros::Publisher robot_pub = nh.advertise<nav_msgs::OccupancyGrid>(robot_name + "_grid", 10);
-        ros::Publisher start_pos_pub = nh.advertise<geometry_msgs::Point>(robot_name + "_starting_pos", 1);
+        // Create publishers with the new topic names
+        ros::Publisher robot_pub = nh.advertise<nav_msgs::OccupancyGrid>(grid_topic, 10);
+        ros::Publisher start_pos_pub = nh.advertise<geometry_msgs::Point>(start_pos_topic, 1);
 
         robot_pubs[robot_name] = robot_pub;
         start_pos_pubs[robot_name] = start_pos_pub;
@@ -121,7 +125,6 @@ int main(int argc, char **argv) {
             std::map<std::string, std::vector<int>> updated_cps_positions;
             for (const auto& robot_frame : robot_frames) {
                 std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
-
                 geometry_msgs::Point position;
                 if (getRobotPosition(tf_listener, robot_frame, position)) {
                     updated_cps_positions[robot_name] = {static_cast<int>(position.x), static_cast<int>(position.y)};
@@ -137,7 +140,7 @@ int main(int argc, char **argv) {
             // Create geometry_msgs::Point messages for starting positions and publish divided maps
             for (const auto& robot_frame : robot_frames) {
                 std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
-
+                int i=0;
                 // Get the divided map for the robot
                 nav_msgs::OccupancyGrid robot_grid = ad.get_grid(current_map, robot_name);
 
@@ -147,16 +150,17 @@ int main(int argc, char **argv) {
                         robot_grid.data[j] = 100;
                     }
                 }
-
+                std::string robot_name_publish = "robot" + std::to_string(i + 1);
                 // Publish the divided map
-                robot_pubs[robot_name].publish(robot_grid);
+                robot_pubs[robot_name_publish].publish(robot_grid);
 
                 // Create and publish starting point
                 std::vector<int> coordinates = updated_cps_positions[robot_name];
                 geometry_msgs::Point start_point;
                 start_point.x = coordinates[0];
                 start_point.y = coordinates[1];
-                start_pos_pubs[robot_name].publish(start_point);
+                start_pos_pubs[robot_name_publish].publish(start_point);
+                i+=1;
             }
 
             map_received = false; // Reset the flag

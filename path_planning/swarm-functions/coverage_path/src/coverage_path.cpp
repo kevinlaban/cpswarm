@@ -171,12 +171,12 @@ int main (int argc, char **argv)
   
 
     // Subscribers for the divided maps
-    ros::Subscriber robot1_sub = nh.subscribe("/area_division/robot1_grid", 10, robot1GridCallback);
+    ros::Subscriber robot1_sub = nh.subscribe("/robot1_grid", 10, robot1GridCallback);
     // ros::Subscriber robot2_sub = nh.subscribe("robot2_grid", 10, robot2GridCallback);
     // ros::Subscriber robot3_sub = nh.subscribe("robot3_grid", 10, robot3GridCallback);
 
     // Subscriber for the starting position of the Robots
-    ros::Subscriber startPosSub_R1 = nh.subscribe("R1_starting_pos", 10, robot1StartPositionCallback);
+    ros::Subscriber startPosSub_R1 = nh.subscribe("robot1_starting_pos", 10, robot1StartPositionCallback);
     // ros::Subscriber startPosSub_R2 = nh.subscribe("R2_starting_pos", 10, robot2StartPositionCallback);
     // ros::Subscriber startPosSub_R3 = nh.subscribe("R3_starting_pos", 10, robot3StartPositionCallback);
 
