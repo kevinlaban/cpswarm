@@ -25,6 +25,7 @@
     <depend>actionlib</depend>
     <depend>geometry_msgs</depend>
     <depend>nav_msgs</depend>
+    <depend>message_generation</depend>
     <exec_depend>area_provider</exec_depend>
     <exec_depend>area_division</exec_depend>
     <exec_depend>state_exchanger</exec_depend>
