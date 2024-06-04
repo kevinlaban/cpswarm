@@ -117,6 +117,7 @@ void spanning_tree::construct ()
 
         // remove edge from source tree
         edges.pop();
+        ROS_INFO("Size of edges: %zu", edges.size());
     }
 }
 

@@ -122,17 +122,18 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     ROS_INFO("Generate new coverage path...");
 
     // construct minimum spanning tree
-    ROS_DEBUG("Construct minimum-spanning-tree...");
+    ROS_INFO("pre Construct minimum-spanning-tree...");
     spanning_tree tree;
     tree.initialize_graph(area, vertical);
+    ROS_INFO("Construct minimum-spanning-tree...");
     tree.construct();
-
+    ROS_INFO("postConstruct minimum-spanning-tree...");
     // visualize path
     if (visualize)
         mst_publisher.publish(tree.get_tree());
 
     // generate path
-    ROS_DEBUG("Generate coverage path...");
+    ROS_INFO("Generate coverage path...");
     path.initialize_map(area, 0, vertical);
     // Check here
     path.initialize_tree(tree.get_mst_edges());

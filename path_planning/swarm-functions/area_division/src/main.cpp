@@ -134,9 +134,10 @@ int main(int argc, char **argv) {
                 }
             }
             ad.initialize_cps(updated_cps_positions);
-
+            ROS_INFO("Before division...");
             // Perform area division
             ad.divide();
+            ROS_INFO("Post division...");
 
             // Create geometry_msgs::Point messages for starting positions and publish divided maps
             for (const auto& robot_frame : robot_frames) {

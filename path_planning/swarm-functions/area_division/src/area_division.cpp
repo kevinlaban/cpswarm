@@ -22,7 +22,7 @@ void area_division::divide ()
     else {
         termThr=0;
     }
-    ROS_DEBUG("%d free cells.", effectiveSize);
+    ROS_INFO("%d free cells.", effectiveSize);
 
     // initialize distances of cells to cps
     vector<valarray<double>> AllDistances(nr, valarray<double>(rows*cols));
@@ -33,7 +33,7 @@ void area_division::divide ()
             }
         }
     }
-    ROS_DEBUG("Computed distances from CPSs to all cells.");
+    ROS_INFO("Computed distances from CPSs to all cells.");
 
 
     vector<valarray<double>> MetricMatrix = AllDistances;
@@ -41,7 +41,7 @@ void area_division::divide ()
     // perform area division
     success = false;
     while (termThr<=discr && !success) {
-        ROS_DEBUG("Try division with discrepancy %d<=%d.", termThr, discr);
+        ROS_INFO("Try division with discrepancy %d<=%d.", termThr, discr);
 
         // initializations
         double downThres = ((double)NoTiles-(double)termThr*(nr-1)) / (double)(NoTiles*nr);
@@ -122,14 +122,14 @@ void area_division::divide ()
             max_iter = max_iter/2;
             success = false;
 
-            ROS_DEBUG("Failed to divide in %d iterations.", iter);
+            ROS_INFO("Failed to divide in %d iterations.", iter);
 
             // increase allowed area discrepancy
             termThr++;
         }
 
         else
-            ROS_DEBUG("Succeeded division with discrepancy %d after %d < %d iterations", termThr, iter, max_iter);
+            ROS_INFO("Succeeded division with discrepancy %d after %d < %d iterations", termThr, iter, max_iter);
     }
 
     if (success == false)
@@ -190,7 +190,7 @@ void area_division::initialize_cps (map<string, vector<int>> cpss)
         // index of position in grid map
         int idx = y * cols + x;
         ROS_INFO("Fourth step inside...");
-        ROS_DEBUG("CPS %d (%s) at (%d,%d) index %d", nr, c.first.c_str(), x, y, idx);
+        ROS_INFO("CPS %d (%s) at (%d,%d) index %d", nr, c.first.c_str(), x, y, idx);
 
         if (gridmap[idx] == 127) {
             ROS_WARN("Skipping CPS %s at (%d, %d) due to unexplored cell", c.first.c_str(), x, y);
@@ -230,7 +230,7 @@ void area_division::initialize_map (int r, int c, vector<signed char> src)
         else
             gridmap[i]=0;
 
-    ROS_DEBUG("There are %d occupied cells.", ob);
+    ROS_INFO("There are %d occupied cells.", ob);
 }
 
 void area_division::assign (vector<valarray<double>> matrix)
