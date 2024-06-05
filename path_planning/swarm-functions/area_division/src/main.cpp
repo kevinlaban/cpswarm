@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
     // Subscriber for the occupancy grid map
     ros::Subscriber map_sub = nh.subscribe("/map", 10, mapCallback);
 
-    ros::Rate loop_rate(1); // 1 Hz
+    ros::Rate loop_rate(0.1); // 1 Hz
     while (ros::ok()) {
         if (map_received) {
             ROS_INFO("Processing received map...");

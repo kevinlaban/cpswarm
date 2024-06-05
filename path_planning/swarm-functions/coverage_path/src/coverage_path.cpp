@@ -3,6 +3,9 @@
 #include <iostream>
 #include <vector>
 #include <cmath> // For std::ceil
+#include <geometry_msgs/PointStamped.h>
+#include <std_srvs/Trigger.h>
+#include <coverage_path/GeneratePath.h>
 
 std::mutex grid_mutex;  // Mutex for thread-safe access to grid variables
  
@@ -94,7 +97,7 @@ void robot1GridCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     latest_robot1_grid = *msg; // Store the latest grid
 
 
-    generate_path(start_position1, latest_robot1_grid, path_publisher1);
+    // generate_path(start_position1, latest_robot1_grid, path_publisher1);
 }
 
 // Callback for Robot 1 starting position
@@ -152,6 +155,17 @@ void robot3StartPositionCallback(const geometry_msgs::Point::ConstPtr& msg) {
     start_position3 = *msg;
     ROS_INFO("Starting position for Robot 3 received - x: %f, y: %f", msg->x, msg->y);
 }
+
+// Service callback
+bool generate_path_service(coverage_path::GeneratePath::Request &req, coverage_path::GeneratePath::Response &res) {
+    res.feedback = generate_path(req.point, latest_robot1_grid, path_publisher1);
+    // res.feedback.message = "Path generation completed";
+    return true;
+}
+
+
+
+
 /**
  * @brief Generate an optimal coverage path for a given area.
  * @param start The starting position of the path.
@@ -207,7 +221,6 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
 
     path_publisher.publish(path.get_path());
 
-
     return true;
 }
 
@@ -238,8 +251,12 @@ int main (int argc, char **argv)
     // ros::Subscriber startPosSub_R2 = nh.subscribe("R2_starting_pos", 10, robot2StartPositionCallback);
     // ros::Subscriber startPosSub_R3 = nh.subscribe("R3_starting_pos", 10, robot3StartPositionCallback);
 
+    // Create the service
+    ros::ServiceServer service = nh.advertiseService("/generate_path", generate_path_service);
 
-    ROS_INFO("Path generation action server available");
+
+
+    ROS_INFO("/generate_path service server available");
 
     spin();
 
