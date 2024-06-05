@@ -72,7 +72,7 @@ bool turning_points;
  * @return Whether the path has been generated successfully.
  */
 bool generate_path(geometry_msgs::Point start, const nav_msgs::OccupancyGrid& robot_occupancy_map, ros::Publisher& path_publisher);
-
+nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution);
 
 
 // External publisher declarations
