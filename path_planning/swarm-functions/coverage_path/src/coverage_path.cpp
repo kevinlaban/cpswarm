@@ -2,7 +2,6 @@
 #include <mutex>
 #include <iostream>
 #include <vector>
-#include <nav_msgs/OccupancyGrid.h>
 #include <cmath> // For std::ceil
 
 std::mutex grid_mutex;  // Mutex for thread-safe access to grid variables
@@ -23,53 +22,58 @@ geometry_msgs::Point start_position1;
 geometry_msgs::Point start_position2;
 geometry_msgs::Point start_position3;
 
-
-
 nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution) {
-    if (desiredResolution < originalGrid.info.resolution) {
+    double originalResolution = originalGrid.info.resolution;
+    
+    if (desiredResolution < originalResolution) {
         throw std::invalid_argument("Desired resolution must be greater than or equal to the original resolution.");
     }
-    double originalResolution = originalGrid.info.resolution;
-    double factor = desiredResolution / originalResolution;
-
-    // Round the factor to the nearest integer
-    int roundedFactor = std::round(factor);
-
-    // Calculate the new adjusted resolution
+    
+    double scale_factor = desiredResolution / originalResolution;
+    int roundedFactor = std::round(scale_factor);
+    
+    // Calculate the new resolution
     double adjustedResolution = originalResolution * roundedFactor;
-
+    
     nav_msgs::OccupancyGrid downsizedGrid;
     downsizedGrid.info = originalGrid.info;
-
-    //double factor = originalGrid.info.resolution / adjustedResolution;
-    int downsizedWidth = std::ceil(originalGrid.info.width / roundedFactor);
-    int downsizedHeight = std::ceil(originalGrid.info.height / roundedFactor);
-    downsizedGrid.info.width = downsizedWidth;
-    downsizedGrid.info.height = downsizedHeight;
+    downsizedGrid.info.width = std::ceil(originalGrid.info.width / roundedFactor);
+    downsizedGrid.info.height = std::ceil(originalGrid.info.height / roundedFactor);
     downsizedGrid.info.resolution = adjustedResolution;
-    downsizedGrid.data.resize(downsizedWidth * downsizedHeight);
-
-    for (int y = 0; y < downsizedHeight; ++y) {
-        for (int x = 0; x < downsizedWidth; ++x) {
+    downsizedGrid.data.resize(downsizedGrid.info.width * downsizedGrid.info.height);
+    
+    for (int y = 0; y < downsizedGrid.info.height; ++y) {
+        for (int x = 0; x < downsizedGrid.info.width; ++x) {
             int originalXStart = x * roundedFactor;
             int originalYStart = y * roundedFactor;
-            int originalXEnd = std::min(originalXStart + roundedFactor, double(originalGrid.info.width));
-            int originalYEnd = std::min(originalYStart + roundedFactor, double(originalGrid.info.height));
-
-            int sum = 0, count = 0;
+            int originalXEnd = std::min(static_cast<int>(originalXStart + roundedFactor), static_cast<int>(originalGrid.info.width));
+            int originalYEnd = std::min(static_cast<int>(originalYStart + roundedFactor), static_cast<int>(originalGrid.info.height));
+            int sum = 0, count = 0, foundUnknown = false;
             for (int i = originalYStart; i < originalYEnd; ++i) {
                 for (int j = originalXStart; j < originalXEnd; ++j) {
                     int index = i * originalGrid.info.width + j;
+                    if (originalGrid.data[index] == -1) {
+                        foundUnknown = true;
+                        break;
+                    }
                     sum += originalGrid.data[index];
                     count++;
                 }
+                if (foundUnknown) break;
             }
-            downsizedGrid.data[y * downsizedWidth + x] = (count > 0) ? (sum / count) : -1; // Assign -1 for unknown areas
+            if (foundUnknown) {
+                downsizedGrid.data[y * downsizedGrid.info.width + x] = -1; // Mark the entire cell as -1 if any part is unknown
+            } else if (count > 0) {
+                downsizedGrid.data[y * downsizedGrid.info.width + x] = sum / count; // Average of the values
+            } else {
+                downsizedGrid.data[y * downsizedGrid.info.width + x] = -1; // Assign -1 if no valid data was found
+            }
         }
     }
 
     return downsizedGrid;
 }
+
 
 
 
