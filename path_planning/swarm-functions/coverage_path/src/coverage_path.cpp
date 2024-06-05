@@ -1,5 +1,8 @@
 #include "coverage_path.h"
 #include <mutex>
+#include <iostream>
+#include <vector>
+#include <cmath> // For std::ceil
 
 std::mutex grid_mutex;  // Mutex for thread-safe access to grid variables
  
@@ -18,6 +21,60 @@ nav_msgs::OccupancyGrid latest_robot3_grid;
 geometry_msgs::Point start_position1;
 geometry_msgs::Point start_position2;
 geometry_msgs::Point start_position3;
+
+nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution) {
+    double originalResolution = originalGrid.info.resolution;
+    
+    if (desiredResolution < originalResolution) {
+        throw std::invalid_argument("Desired resolution must be greater than or equal to the original resolution.");
+    }
+    
+    double scale_factor = desiredResolution / originalResolution;
+    int roundedFactor = std::round(scale_factor);
+    
+    // Calculate the new resolution
+    double adjustedResolution = originalResolution * roundedFactor;
+    
+    nav_msgs::OccupancyGrid downsizedGrid;
+    downsizedGrid.info = originalGrid.info;
+    downsizedGrid.info.width = std::ceil(originalGrid.info.width / roundedFactor);
+    downsizedGrid.info.height = std::ceil(originalGrid.info.height / roundedFactor);
+    downsizedGrid.info.resolution = adjustedResolution;
+    downsizedGrid.data.resize(downsizedGrid.info.width * downsizedGrid.info.height);
+    
+    for (int y = 0; y < downsizedGrid.info.height; ++y) {
+        for (int x = 0; x < downsizedGrid.info.width; ++x) {
+            int originalXStart = x * roundedFactor;
+            int originalYStart = y * roundedFactor;
+            int originalXEnd = std::min(static_cast<int>(originalXStart + roundedFactor), static_cast<int>(originalGrid.info.width));
+            int originalYEnd = std::min(static_cast<int>(originalYStart + roundedFactor), static_cast<int>(originalGrid.info.height));
+            int sum = 0, count = 0, foundUnknown = false;
+            for (int i = originalYStart; i < originalYEnd; ++i) {
+                for (int j = originalXStart; j < originalXEnd; ++j) {
+                    int index = i * originalGrid.info.width + j;
+                    if (originalGrid.data[index] == -1) {
+                        foundUnknown = true;
+                        break;
+                    }
+                    sum += originalGrid.data[index];
+                    count++;
+                }
+                if (foundUnknown) break;
+            }
+            if (foundUnknown) {
+                downsizedGrid.data[y * downsizedGrid.info.width + x] = -1; // Mark the entire cell as -1 if any part is unknown
+            } else if (count > 0) {
+                downsizedGrid.data[y * downsizedGrid.info.width + x] = sum / count; // Average of the values
+            } else {
+                downsizedGrid.data[y * downsizedGrid.info.width + x] = -1; // Assign -1 if no valid data was found
+            }
+        }
+    }
+
+    return downsizedGrid;
+}
+
+
 
 
 // Callback functions to handle incoming grid data for each robot
@@ -111,8 +168,8 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     ROS_DEBUG("Get map of divided area...");
 
  
-    nav_msgs::OccupancyGrid area = robot_occupancy_map;
-
+    nav_msgs::OccupancyGrid area = parseGrid(robot_occupancy_map,0.3);
+    ROS_DEBUG("Grid has been downsized");
     // ROS_INFO("Occupancy Grid Info:");
     // ROS_INFO("  Width: %d", area.info.width);
     // ROS_INFO("  Height: %d", area.info.height);
