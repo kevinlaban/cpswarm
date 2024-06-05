@@ -29,7 +29,7 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     if (desiredResolution < originalGrid.info.resolution) {
         throw std::invalid_argument("Desired resolution must be greater than or equal to the original resolution.");
     }
-    double originalResolution = originalGrid.info.resolution
+    double originalResolution = originalGrid.info.resolution;
     double factor = desiredResolution / originalResolution;
 
     // Round the factor to the nearest integer
@@ -41,7 +41,7 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     nav_msgs::OccupancyGrid downsizedGrid;
     downsizedGrid.info = originalGrid.info;
 
-    double factor = originalGrid.info.resolution / adjustedResolution;
+    //double factor = originalGrid.info.resolution / adjustedResolution;
     int downsizedWidth = std::ceil(originalGrid.info.width / roundedFactor);
     int downsizedHeight = std::ceil(originalGrid.info.height / roundedFactor);
     downsizedGrid.info.width = downsizedWidth;
@@ -164,7 +164,7 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     ROS_DEBUG("Get map of divided area...");
 
  
-    nav_msgs::OccupancyGrid area = robot_occupancy_map;
+    nav_msgs::OccupancyGrid area = parseGrid(robot_occupancy_map,0.6);
 
     // ROS_INFO("Occupancy Grid Info:");
     // ROS_INFO("  Width: %d", area.info.width);
