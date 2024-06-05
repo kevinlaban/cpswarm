@@ -182,7 +182,7 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     ROS_DEBUG("Get map of divided area...");
 
  
-    nav_msgs::OccupancyGrid area = parseGrid(robot_occupancy_map,0.3);
+    nav_msgs::OccupancyGrid area = parseGrid(robot_occupancy_map,0.5);
     ROS_DEBUG("Grid has been downsized");
     // ROS_INFO("Occupancy Grid Info:");
     // ROS_INFO("  Width: %d", area.info.width);
