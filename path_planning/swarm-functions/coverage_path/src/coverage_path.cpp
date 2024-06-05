@@ -1,5 +1,9 @@
 #include "coverage_path.h"
 #include <mutex>
+#include <iostream>
+#include <vector>
+#include <nav_msgs/OccupancyGrid.h>
+#include <cmath> // For std::ceil
 
 std::mutex grid_mutex;  // Mutex for thread-safe access to grid variables
  
@@ -18,6 +22,55 @@ nav_msgs::OccupancyGrid latest_robot3_grid;
 geometry_msgs::Point start_position1;
 geometry_msgs::Point start_position2;
 geometry_msgs::Point start_position3;
+
+
+
+nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution) {
+    if (desiredResolution < originalGrid.info.resolution) {
+        throw std::invalid_argument("Desired resolution must be greater than or equal to the original resolution.");
+    }
+    double originalResolution = originalGrid.info.resolution
+    double factor = desiredResolution / originalResolution;
+
+    // Round the factor to the nearest integer
+    int roundedFactor = std::round(factor);
+
+    // Calculate the new adjusted resolution
+    double adjustedResolution = originalResolution * roundedFactor;
+
+    nav_msgs::OccupancyGrid downsizedGrid;
+    downsizedGrid.info = originalGrid.info;
+
+    double factor = originalGrid.info.resolution / adjustedResolution;
+    int downsizedWidth = std::ceil(originalGrid.info.width / roundedFactor);
+    int downsizedHeight = std::ceil(originalGrid.info.height / roundedFactor);
+    downsizedGrid.info.width = downsizedWidth;
+    downsizedGrid.info.height = downsizedHeight;
+    downsizedGrid.info.resolution = adjustedResolution;
+    downsizedGrid.data.resize(downsizedWidth * downsizedHeight);
+
+    for (int y = 0; y < downsizedHeight; ++y) {
+        for (int x = 0; x < downsizedWidth; ++x) {
+            int originalXStart = x * roundedFactor;
+            int originalYStart = y * roundedFactor;
+            int originalXEnd = std::min(originalXStart + roundedFactor, double(originalGrid.info.width));
+            int originalYEnd = std::min(originalYStart + roundedFactor, double(originalGrid.info.height));
+
+            int sum = 0, count = 0;
+            for (int i = originalYStart; i < originalYEnd; ++i) {
+                for (int j = originalXStart; j < originalXEnd; ++j) {
+                    int index = i * originalGrid.info.width + j;
+                    sum += originalGrid.data[index];
+                    count++;
+                }
+            }
+            downsizedGrid.data[y * downsizedWidth + x] = (count > 0) ? (sum / count) : -1; // Assign -1 for unknown areas
+        }
+    }
+
+    return downsizedGrid;
+}
+
 
 
 // Callback functions to handle incoming grid data for each robot
