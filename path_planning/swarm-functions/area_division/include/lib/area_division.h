@@ -48,7 +48,7 @@ public:
      * @brief Define the CPS positions.
      * @param cpss Mapping from UUIDs to positions of the CPSs.
      */
-    void initialize_cps (map<string, vector<int>> cpss);
+    void initialize_cps (std::map<std::string, std::vector<int>> cpss);
 
     /**
      * @brief Define the grid map.
