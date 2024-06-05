@@ -76,7 +76,6 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
 
 
 
-
 // Callback functions to handle incoming grid data for each robot
 void robot1GridCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     

@@ -174,3 +174,57 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+bool divideArea(your_package::DivideArea::Request &req, your_package::DivideArea::Response &res) {
+    if (!map_received) {
+        res.success = false;
+        res.message = "Map not yet received";
+        return true;
+    }
+
+    // Assuming getRobotFrames and getRobotPosition are functions you have defined to fetch and process robot positions
+    std::vector<std::string> robot_frames = getRobotFrames(*tf_listener_ptr);
+    std::map<std::string, std::vector<int>> robot_positions;
+
+    for (const auto& frame : robot_frames) {
+        geometry_msgs::Point position;
+        if (getRobotPosition(*tf_listener_ptr, frame, position)) {
+            robot_positions[frame] = {static_cast<int>(position.x), static_cast<int>(position.y)};
+        } else {
+            ROS_ERROR("Failed to get position for %s", frame.c_str());
+            continue;
+        }
+    }
+
+    // Initialize with current map and robot positions
+    ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
+    ad.initialize_cps(robot_positions);
+    ad.divide();
+
+    // Process the divided areas and prepare response
+    for (const auto& pos : robot_positions) {
+        nav_msgs::OccupancyGrid divided_grid = ad.get_grid(current_map, pos.first);
+        res.divided_maps.push_back(divided_grid);
+    }
+
+    res.success = true;
+    res.message = "Area successfully divided";
+    return true;
+}
+
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "area_division_service");
+    ros::NodeHandle nh;
+
+    tf_listener_ptr = new tf::TransformListener();
+
+    ros::Subscriber map_sub = nh.subscribe("/map", 10, mapCallback);
+    ros::ServiceServer service = nh.advertiseService("divide_area", divideArea);
+
+    ROS_INFO("Area division service ready.");
+
+    ros::spin();
+
+    delete tf_listener_ptr;
+    return 0;
+}
