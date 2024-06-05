@@ -12,6 +12,7 @@ area_division::area_division ()
 void area_division::divide ()
 {   
     // initializations
+    ROS_INFO("Inside Divide...");
     int NoTiles = rows*cols;
     double fairDivision = 1.0 / nr;
     int effectiveSize = NoTiles - nr - ob;
@@ -22,7 +23,8 @@ void area_division::divide ()
     else {
         termThr=0;
     }
-    ROS_INFO("%d free cells.", effectiveSize);
+    ROS_INFO("Part 1 of divide...");
+    ROS_DEBUG("%d free cells.", effectiveSize);
 
     // initialize distances of cells to cps
     vector<valarray<double>> AllDistances(nr, valarray<double>(rows*cols));
@@ -35,14 +37,14 @@ void area_division::divide ()
     }
     ROS_INFO("Computed distances from CPSs to all cells.");
 
-
+    ROS_INFO("Part 2 of divide...");
     vector<valarray<double>> MetricMatrix = AllDistances;
 
     // perform area division
     success = false;
     while (termThr<=discr && !success) {
-        ROS_INFO("Try division with discrepancy %d<=%d.", termThr, discr);
-
+        ROS_DEBUG("Try division with discrepancy %d<=%d.", termThr, discr);
+        ROS_INFO("Part 3 of divide...");
         // initializations
         double downThres = ((double)NoTiles-(double)termThr*(nr-1)) / (double)(NoTiles*nr);
         double upperThres = ((double)NoTiles+termThr) / (double)(NoTiles*nr);
@@ -52,7 +54,7 @@ void area_division::divide ()
         int iter = 0;
         while (iter <= max_iter) {
             assign(MetricMatrix);
-
+            ROS_INFO("Part 4 of divide...");
             // find connected areas
             vector<valarray<float>> ConnectedMultiplierList(nr);
             double plainErrors[nr];
@@ -60,7 +62,7 @@ void area_division::divide ()
             for (int r=0; r<nr; r++) {
                 valarray<float> ConnectedMultiplier(1, rows*cols);
                 regions[r] = true;
-
+                ROS_INFO("Part 5 of divide...");
                 connected_components cc(BWlist[r], rows, cols, true);
                 valarray<int> Ilabel = cc.compactLabeling();
                 // at least one unconnected regions among r-robot's regions is found
@@ -94,6 +96,7 @@ void area_division::divide ()
             double TotalNegPerc = 0.0, totalNegPlainErrors = 0.0;
             double correctionMult[nr];
             for (int r=0; r<nr; r++) {
+                ROS_INFO("Part 6 of divide...");
                 if (divFairError[r] < 0) {
                     TotalNegPerc += abs(divFairError[r]);
                     totalNegPlainErrors += plainErrors[r];
@@ -103,6 +106,7 @@ void area_division::divide ()
 
             // restore fairness
             for (int r=0; r<nr; r++) {
+                ROS_INFO("Part 7 of divide...");
                 if (totalNegPlainErrors != 0.0) {
                     if (divFairError[r]<0.0) {
                         correctionMult[r] = 1.0 + (plainErrors[r] / totalNegPlainErrors) * (TotalNegPerc / 2.0);
@@ -140,6 +144,7 @@ nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, st
 {
     // create new grid map
     nav_msgs::OccupancyGrid assigned;
+    ROS_INFO("Inside getgrid...");
     //ssigned.data = gridmap;
     //assigned.data=gridmap
     assigned.data=[0,100,0,0,0,100]
@@ -213,6 +218,7 @@ void area_division::initialize_cps (map<string, vector<int>> cpss)
 
 void area_division::initialize_map (int r, int c, vector<signed char> src)
 {
+    ROS_INFO("Map initialise...");
     // initialization
     rows = r;
     cols = c;
