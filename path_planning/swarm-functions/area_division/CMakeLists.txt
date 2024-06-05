@@ -24,7 +24,7 @@ add_library(area_division_lib
   src/lib/connected_components.cpp
 )
 
-add_executable(area_division_node src/main.cpp)
+add_executable(area_division_node src/main.cpp )
 target_link_libraries(area_division_node
   area_division_lib
   ${catkin_LIBRARIES}

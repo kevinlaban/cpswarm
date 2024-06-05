@@ -11,6 +11,7 @@ area_division::area_division ()
 
 void area_division::divide ()
 {   
+    ROS_INFO("Inside Divide...");
     // initializations
     int NoTiles = rows*cols;
     double fairDivision = 1.0 / nr;
@@ -23,7 +24,7 @@ void area_division::divide ()
         termThr=0;
     }
     ROS_DEBUG("%d free cells.", effectiveSize);
-
+    ROS_INFO("Inside Divide Part 1...");
     // initialize distances of cells to cps
     vector<valarray<double>> AllDistances(nr, valarray<double>(rows*cols));
     for (int i=0; i<rows; i++) {
@@ -35,24 +36,27 @@ void area_division::divide ()
     }
     ROS_DEBUG("Computed distances from CPSs to all cells.");
 
-
+    ROS_INFO("Inside Divide Part 2...");
     vector<valarray<double>> MetricMatrix = AllDistances;
 
     // perform area division
     success = false;
     while (termThr<=discr && !success) {
         ROS_DEBUG("Try division with discrepancy %d<=%d.", termThr, discr);
-
+        ROS_INFO("Inside Divide Part 3...");
         // initializations
         double downThres = ((double)NoTiles-(double)termThr*(nr-1)) / (double)(NoTiles*nr);
+        ROS_INFO("Inside Divide Part 3.1...");
         double upperThres = ((double)NoTiles+termThr) / (double)(NoTiles*nr);
+        ROS_INFO("Inside Divide Part 3.2...");
         success = true;
-
+        ROS_INFO("Inside Divide Part 3.3...");
         // main optimization loop
         int iter = 0;
+        ROS_INFO("Inside Divide Part 3.4...");
         while (iter <= max_iter) {
+            ROS_INFO("Inside Divide Part 4...");
             assign(MetricMatrix);
-
             // find connected areas
             vector<valarray<float>> ConnectedMultiplierList(nr);
             double plainErrors[nr];
@@ -60,7 +64,7 @@ void area_division::divide ()
             for (int r=0; r<nr; r++) {
                 valarray<float> ConnectedMultiplier(1, rows*cols);
                 regions[r] = true;
-
+                ROS_INFO("Inside Divide Part 5...");
                 connected_components cc(BWlist[r], rows, cols, true);
                 valarray<int> Ilabel = cc.compactLabeling();
                 // at least one unconnected regions among r-robot's regions is found
@@ -162,7 +166,7 @@ nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, st
     return assigned;
 }
 
-void area_division::initialize_cps (map<string, vector<int>> cpss)
+void area_division::initialize_cps (std::map<std::string, std::vector<int>> cpss)
 {
     // initialize
     nr = 0;
@@ -183,8 +187,13 @@ void area_division::initialize_cps (map<string, vector<int>> cpss)
 
         ROS_DEBUG("CPS %d (%s) at (%d,%d) index %d", nr, c.first.c_str(), x, y, idx);
 
+        // if (gridmap[idx] == 127) {
+        //     ROS_WARN("Skipping CPS %s at (%d, %d) due to unexplored cell", c.first.c_str(), x, y);
+        //     continue;
+        // }
+
         // place cps in data structures
-        gridmap[idx] = numeric_limits<signed char>::max();
+        //gridmap[idx] = numeric_limits<signed char>::max();
         A[idx] = nr;
 
         // store cps position and mapping of uuid
@@ -208,43 +217,58 @@ void area_division::initialize_map (int r, int c, vector<signed char> src)
     for (int i=0; i<gridmap.size(); ++i)
         if (gridmap[i] >= 50)
             ++ob;
+        // else if (gridmap[i]==-1)
+        // {
+        //     gridmap[i]=127;
+        //     ++ob;}
+        // else
+        //     gridmap[i]=0;
 
     ROS_DEBUG("There are %d occupied cells.", ob);
+    //ROS_INFO(" %d gridmap", ob);
 }
 
 void area_division::assign (vector<valarray<double>> matrix)
 {
+    ROS_INFO("Inside Assign Part 1...");
     BWlist.resize(nr);
     for (int r=0; r<nr; r++) {
+        ROS_INFO("Inside Assign Part 2...");
         BWlist[r].resize(rows*cols);
         BWlist[r][cps[r][1] * cols + cps[r][0]] = 1;
     }
-
+    ROS_INFO("Inside Assign Part 3...");
     ArrayOfElements.clear();
     ArrayOfElements.resize(nr);
+    ROS_INFO("Inside Assign Part 4...");
     for (int i=0; i<rows; i++) {
         for (int j=0; j<cols; j++) {
+            //ROS_INFO("Inside Assign Part 5...");
+            int idx=i*cols+j;
             // free grid cell, assign to a robot
-            if (gridmap[i*cols+j] < 50) {
+            if (gridmap[idx] < 50) {
                 // find index of robot that has lowest metric value
-                double minV = matrix[0][i*cols+j];
+                //ROS_INFO("Inside Assign Part 5.55555...");
+                double minV = matrix[0][idx];
                 int indMin = 0;
                 for (int r=1; r<nr; r++) {
-                    if (matrix[r][i*cols+j] <= minV) {
-                        minV = matrix[r][i*cols+j];
+                    //ROS_INFO("Inside Assign Part 6...");
+                    if (matrix[r][idx] <= minV) {
+                        minV = matrix[r][idx];
                         indMin = r;
                     }
                 }
-
+                //ROS_INFO("Inside Assign Part 7...");
                 // store assignment
-                A[i*cols+j] = indMin;
-                BWlist[indMin][i*cols+j] = 1;
+                A[idx] = indMin;
+                BWlist[indMin][idx] = 1;
                 ArrayOfElements[indMin]++;
             }
+            
 
             // obstacle
-            else if (gridmap[i*cols+j] < numeric_limits<signed char>::max()) {
-                A[i*cols+j] = nr;
+            else {
+                A[idx] = nr;
             }
         }
     }

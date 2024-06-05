@@ -128,7 +128,8 @@ int main(int argc, char **argv) {
                 std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
                 geometry_msgs::Point position;
                 if (getRobotPosition(tf_listener, robot_frame, position)) {
-                    updated_cps_positions[robot_name] = {static_cast<int>(position.x), static_cast<int>(position.y)};
+                    //ROS_INFO("Position x: %d, Position y:%d", static_cast<int>(position.x),static_cast<int>(position.y));
+                    updated_cps_positions[robot_name] = {static_cast<int>(0), static_cast<int>(0)};
                 } else {
                     ROS_ERROR("Failed to get position for %s", robot_name.c_str());
                 }
