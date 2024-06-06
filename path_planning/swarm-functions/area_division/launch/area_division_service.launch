@@ -1,0 +1,3 @@
+<launch>
+    <node name="area_division_service" pkg="area_division" type="area_division_service" output="screen"/>
+</launch>
