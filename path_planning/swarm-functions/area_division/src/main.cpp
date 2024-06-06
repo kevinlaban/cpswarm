@@ -21,7 +21,6 @@ void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
 
 nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_grid, int threshold, int iterations) {
     nav_msgs::OccupancyGrid padded_grid = input_grid;
-
     int width = input_grid.info.width;
     int height = input_grid.info.height;
 
@@ -31,7 +30,7 @@ nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_gr
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 int index = y * width + x;
-                if (input_grid.data[index] > threshold) {
+                if (padded_grid.data[index] > threshold) {
                     for (int dy = -1; dy <= 1; ++dy) {
                         for (int dx = -1; dx <= 1; ++dx) {
                             int new_x = x + dx;
