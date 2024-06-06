@@ -25,6 +25,37 @@ geometry_msgs::Point start_position1;
 geometry_msgs::Point start_position2;
 geometry_msgs::Point start_position3;
 
+nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_grid, int threshold, int iterations) {
+    nav_msgs::OccupancyGrid padded_grid = input_grid;
+    int width = input_grid.info.width;
+    int height = input_grid.info.height;
+
+    for (int it = 0; it < iterations; ++it) {
+        nav_msgs::OccupancyGrid temp_grid = padded_grid;
+
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                int index = y * width + x;
+                if (padded_grid.data[index] > threshold) {
+                    for (int dy = -1; dy <= 1; ++dy) {
+                        for (int dx = -1; dx <= 1; ++dx) {
+                            int new_x = x + dx;
+                            int new_y = y + dy;
+                            if (new_x >= 0 && new_x < width && new_y >= 0 && new_y < height) {
+                                int new_index = new_y * width + new_x;
+                                temp_grid.data[new_index] = 100;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        padded_grid = temp_grid;
+    }
+
+    return padded_grid;
+}
+
 nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution) {
     double originalResolution = originalGrid.info.resolution;
     
@@ -181,8 +212,8 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     // get area divided per robot
     ROS_DEBUG("Get map of divided area...");
 
- 
-    nav_msgs::OccupancyGrid area = parseGrid(robot_occupancy_map,0.5);
+    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40,3);
+    nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.5);
     ROS_DEBUG("Grid has been downsized");
     // ROS_INFO("Occupancy Grid Info:");
     // ROS_INFO("  Width: %d", area.info.width);
