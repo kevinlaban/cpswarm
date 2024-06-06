@@ -138,14 +138,23 @@ int main(int argc, char **argv) {
             // Initialize the map in the area_division object
             ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
 
+            // Calculate the inverse transform from the map to the grid origin
+            tf::Transform gridOriginTransform = getTransformToGridOrigin(current_map);
+            tf::Transform inverseTransform = gridOriginTransform.inverse();
+
             // Get robot positions using tf
             std::map<std::string, std::vector<int>> updated_cps_positions;
             for (const auto& robot_frame : robot_frames) {
                 std::string robot_name = robot_frame.substr(0, robot_frame.find('_'));
                 geometry_msgs::Point position;
                 if (getRobotPosition(tf_listener, robot_frame, position)) {
-                    //ROS_INFO("Position x: %d, Position y:%d", static_cast<int>(position.x),static_cast<int>(position.y));
-                    updated_cps_positions[robot_name] = {static_cast<int>(0), static_cast<int>(0)};
+                    tf::Vector3 positionVector(position.x, position.y, position.z);
+                    tf::Vector3 transformedPosition = inverseTransform * positionVector;
+
+                    updated_cps_positions[robot_name] = {
+                        std::max(0, static_cast<int>(transformedPosition.x())),
+                        std::max(0, static_cast<int>(transformedPosition.y()))
+                    };
                 } else {
                     ROS_ERROR("Failed to get position for %s", robot_name.c_str());
                 }
