@@ -18,7 +18,7 @@ void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     ROS_INFO("Map received: width=%d, height=%d", current_map.info.width, current_map.info.height);
 }
 
-tf::Transform getTransformToGridOrigin(const nav.png_msgs/OccupancyGrid& grid) {
+tf::Transform getTransformToGridOrigin(const nav_msgs::OccupancyGrid& grid) {
     tf::Transform transform;
 
     // Set the translation to the position of the origin
