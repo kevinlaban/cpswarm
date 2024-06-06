@@ -209,7 +209,7 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     // Check here
     path.initialize_tree(tree.get_mst_edges());
     if (!path.generate_path(start)) {
-        ROS_WARN("Failed to generate path for the robottarting at (%.2f,%.2f)", start.x, start.y);
+        ROS_WARN("Failed to generate path for the robot starting at (%.2f,%.2f)", start.x, start.y);
         return false;
         }
     if (turning_points)
@@ -248,8 +248,8 @@ int main (int argc, char **argv)
 
     // Subscriber for the starting position of the Robots
     ros::Subscriber startPosSub_R1 = nh.subscribe("robot1_starting_pos", 10, robot1StartPositionCallback);
-    // ros::Subscriber startPosSub_R2 = nh.subscribe("R2_starting_pos", 10, robot2StartPositionCallback);
-    // ros::Subscriber startPosSub_R3 = nh.subscribe("R3_starting_pos", 10, robot3StartPositionCallback);
+    // ros::Subscriber startPosSub_R2 = nh.subscribe("robot2_starting_pos", 10, robot2StartPositionCallback);
+    // ros::Subscriber startPosSub_R3 = nh.subscribe("robot3_starting_pos", 10, robot3StartPositionCallback);
 
     // Create the service
     ros::ServiceServer service = nh.advertiseService("/generate_path", generate_path_service);

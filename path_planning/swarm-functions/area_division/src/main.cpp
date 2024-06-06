@@ -18,6 +18,22 @@ void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     ROS_INFO("Map received: width=%d, height=%d", current_map.info.width, current_map.info.height);
 }
 
+tf::Transform getTransformToGridOrigin(const nav.png_msgs/OccupancyGrid& grid) {
+    tf::Transform transform;
+
+    // Set the translation to the position of the origin
+    transform.setOrigin(tf::Vector3(grid.info.origin.position.x,
+                                    grid.info.origin.position.y,
+                                    grid.info.origin.position.z));
+
+    // Set the orientation from the quaternion provided in the grid's origin
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(grid.info.origin.orientation, q);
+    transform.setRotation(q);
+
+    return transform;
+}
+
 bool getRobotPosition(tf::TransformListener &listener, const std::string &robot_frame, geometry_msgs::Point &position) {
     tf::StampedTransform transform_base_to_odom, transform_odom_to_map;
     try {
