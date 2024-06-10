@@ -267,6 +267,13 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40,3);
     nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.5);
     ROS_DEBUG("Grid has been downsized");
+    // Publish the padded grid
+    ros::Publisher padded_grid_publisher = nh.advertise<nav_msgs::OccupancyGrid>("PaddedGrid", 1, true);
+    padded_grid_publisher.publish(padded_grid);
+
+    // Publish the parsed grid
+    ros::Publisher parsed_grid_publisher = nh.advertise<nav_msgs::OccupancyGrid>("ParsedGrid", 1, true);
+    parsed_grid_publisher.publish(area);
     // ROS_INFO("Occupancy Grid Info:");
     // ROS_INFO("  Width: %d", area.info.width);
     // ROS_INFO("  Height: %d", area.info.height);
@@ -323,6 +330,8 @@ int main (int argc, char **argv)
     // init ros node
     init(argc, argv, "coverage_path");
     NodeHandle nh;
+    ros::Publisher padded_grid_publisher = nh.advertise<nav_msgs::OccupancyGrid>("PaddedGrid", 1, true);
+    ros::Publisher parsed_grid_publisher = nh.advertise<nav_msgs::OccupancyGrid>("ParsedGrid", 1, true);
 
     path_publisher1 = nh.advertise<nav_msgs::Path>("coverage_path/path1", 1, true);
     // path_publisher2 = nh.advertise<nav_msgs::Path>("coverage_path/path2", 1, true);
@@ -335,7 +344,7 @@ int main (int argc, char **argv)
     // ros::Subscriber robot3_sub = nh.subscribe("robot3_grid", 10, robot3GridCallback);
 
     // Subscriber for the starting position of the Robots
-    //ros::Subscriber startPosSub_R1 = nh.subscribe("robot1_starting_pos", 10, robot1StartPositionCallback);
+    ros::Subscriber startPosSub_R1 = nh.subscribe("robot1_starting_pos", 10, robot1StartPositionCallback);
     // ros::Subscriber startPosSub_R2 = nh.subscribe("robot2_starting_pos", 10, robot2StartPositionCallback);
     // ros::Subscriber startPosSub_R3 = nh.subscribe("robot3_starting_pos", 10, robot3StartPositionCallback);
 
