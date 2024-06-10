@@ -3,7 +3,7 @@
 
 This package generates an optimal path to cover a given area with a cyber physical system (CPS). This package has been adapted by group 13, 15 and 17 for RO47007 Multidisciplinary Project 2023-2024 of the TU Delft.
 
-This package was adapted by Felipe Bononi Bello (fbononibello@gmail.com) and Ming Da Yang (m.d.yang@student.tudelft.nl).
+This package was adapted by Felipe Bononi Bello (fbononibello@gmail.com), Ming Da Yang (m.d.yang@student.tudelft.nl) and Kevin Laban (K.A.A.Laban@student.tudelft.nl).
 
 
 ## Dependencies
