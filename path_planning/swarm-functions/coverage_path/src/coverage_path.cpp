@@ -25,6 +25,18 @@ geometry_msgs::Point start_position1;
 geometry_msgs::Point start_position2;
 geometry_msgs::Point start_position3;
 
+/**
+ * @brief Pads the input occupancy grid by expanding obstacles.
+ * 
+ * This function takes an input occupancy grid and "pads" obstacles by a given number
+ * of iterations. For each iteration, it expands the obstacle region by marking neighboring
+ * cells as obstacles if they are within a threshold distance.
+ * 
+ * @param input_grid The input occupancy grid to be padded.
+ * @param threshold The threshold value above which cells are considered obstacles.
+ * @param iterations The number of iterations for padding.
+ * @return The padded occupancy grid.
+ */
 nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_grid, int threshold, int iterations) {
     nav_msgs::OccupancyGrid padded_grid = input_grid;
     int width = input_grid.info.width;
@@ -56,6 +68,17 @@ nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_gr
     return padded_grid;
 }
 
+/**
+ * @brief Resizes an occupancy grid to a desired resolution.
+ * 
+ * This function takes an occupancy grid and downsizes it to a desired resolution. It averages
+ * the values within each new cell to determine the new grid values.
+ * 
+ * @param originalGrid The original occupancy grid to be downsized.
+ * @param desiredResolution The desired resolution for the new grid.
+ * @return The downsized occupancy grid.
+ * @throws std::invalid_argument If the desired resolution is smaller than the original resolution.
+ */
 nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution) {
     double originalResolution = originalGrid.info.resolution;
     
@@ -109,9 +132,15 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
 }
 
 
-
-
 // Callback functions to handle incoming grid data for each robot
+/**
+ * @brief Callback function for receiving the occupancy grid of Robot 1.
+ * 
+ * This function is called whenever a new occupancy grid message is received for Robot 1.
+ * It processes the grid data and stores it in the shared variable.
+ * 
+ * @param msg The incoming occupancy grid message for Robot 1.
+ */
 void robot1GridCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     
 
@@ -132,6 +161,14 @@ void robot1GridCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
 }
 
 // Callback for Robot 1 starting position
+/**
+ * @brief Callback function for receiving the starting position of Robot 1.
+ * 
+ * This function is called whenever a new starting position message is received for Robot 1.
+ * It updates the shared starting position variable.
+ * 
+ * @param msg The incoming starting position message for Robot 1.
+ */
 void robot1StartPositionCallback(const geometry_msgs::Point::ConstPtr& msg) {
     std::lock_guard<std::mutex> lock(grid_mutex);
     start_position1 = *msg;
@@ -187,6 +224,16 @@ void robot3StartPositionCallback(const geometry_msgs::Point::ConstPtr& msg) {
     ROS_INFO("Starting position for Robot 3 received - x: %f, y: %f", msg->x, msg->y);
 }
 
+/**
+ * @brief Service callback function for generating a coverage path for specifically robot 1.
+ * 
+ * This function is called whenever the generate_path service is called. It generates a coverage path
+ * based on the provided starting point and the latest occupancy grid for Robot 1.
+ * 
+ * @param req The service request containing the starting point.
+ * @param res The service response containing feedback on the path generation.
+ * @return True if the service call was successful, otherwise false.
+ */
 // Service callback
 bool generate_path_service(coverage_path::GeneratePath::Request &req, coverage_path::GeneratePath::Response &res) {
     res.feedback = generate_path(req.point, latest_robot1_grid, path_publisher1);
@@ -257,9 +304,14 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
 
 /**
  * @brief A ROS node that computes the optimal paths for area coverage with a swarm of CPSs.
+ * 
+ * This is the main function for the ROS node that handles the area coverage path planning for multiple robots.
+ * It initializes the ROS node, sets up subscribers for the occupancy grids and starting positions of the robots,
+ * and creates a service for generating coverage paths.
+ * 
  * @param argc Number of command line arguments.
  * @param argv Array of command line arguments.
- * @return Success.
+ * @return Success (0).
  */
 int main (int argc, char **argv)
 {
