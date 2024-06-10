@@ -98,14 +98,7 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     downsizedGrid.info.height = std::ceil(originalGrid.info.height / roundedFactor);
     downsizedGrid.info.resolution = adjustedResolution;
     downsizedGrid.data.resize(downsizedGrid.info.width * downsizedGrid.info.height);
-        // Calculate origin shift to center the first cell's midpoint under the new resolution
-    double originShift = (roundedFactor * originalResolution) / 2;
-
-    downsizedGrid.info.origin.position.x = originalGrid.info.origin.position.x + originShift - (originalResolution / 2);
-    downsizedGrid.info.origin.position.y = originalGrid.info.origin.position.y + originShift - (originalResolution / 2);
-
-
-
+    
     for (int y = 0; y < downsizedGrid.info.height; ++y) {
         for (int x = 0; x < downsizedGrid.info.width; ++x) {
             int originalXStart = x * roundedFactor;
@@ -136,7 +129,74 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     }
 
     return downsizedGrid;
-}{
+}
+
+
+// Callback functions to handle incoming grid data for each robot
+/**
+ * @brief Callback function for receiving the occupancy grid of Robot 1.
+ * 
+ * This function is called whenever a new occupancy grid message is received for Robot 1.
+ * It processes the grid data and stores it in the shared variable.
+ * 
+ * @param msg The incoming occupancy grid message for Robot 1.
+ */
+void robot1GridCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
+    
+
+    std::lock_guard<std::mutex> lock(grid_mutex);
+    if (msg->info.width == 0 || msg->info.height == 0 || msg->info.resolution <= 0.0) {
+        ROS_WARN("Received an invalid grid.");
+        return;
+    }
+    geometry_msgs::Point start_position1;
+    start_position1.x = 0.0;
+    start_position1.y = 0.0;
+
+     // Process the grid data for robot1
+    latest_robot1_grid = *msg; // Store the latest grid
+
+
+    // generate_path(start_position1, latest_robot1_grid, path_publisher1);
+}
+
+// Callback for Robot 1 starting position
+/**
+ * @brief Callback function for receiving the starting position of Robot 1.
+ * 
+ * This function is called whenever a new starting position message is received for Robot 1.
+ * It updates the shared starting position variable.
+ * 
+ * @param msg The incoming starting position message for Robot 1.
+ */
+void robot1StartPositionCallback(const geometry_msgs::Point::ConstPtr& msg) {
+    std::lock_guard<std::mutex> lock(grid_mutex);
+    start_position1 = *msg;
+    ROS_INFO("Starting position for Robot 1 received - x: %f, y: %f", msg->x, msg->y);
+}
+
+void robot2GridCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
+    ROS_INFO("Grid for Robot 2 received with width %d and height %d", msg->info.width, msg->info.height);
+    std::lock_guard<std::mutex> lock(grid_mutex);
+    if (msg->info.width == 0 || msg->info.height == 0 || msg->info.resolution <= 0.0) {
+        ROS_WARN("Received an invalid grid.");
+        ROS_INFO("RRRRRRRRRRRRR2");
+        return;
+    }
+    // geometry_msgs::Point start_position2;
+    // start_position2.x = 19.0;
+    // start_position2.y = 19.0;
+
+    // Process the grid data for robot1
+    latest_robot2_grid = *msg; // Store the latest grid
+    
+
+
+    generate_path(start_position2, latest_robot2_grid, path_publisher2);
+}
+
+// Callback for Robot 2 starting position
+void robot2StartPositionCallback(const geometry_msgs::Point::ConstPtr& msg) {
     std::lock_guard<std::mutex> lock(grid_mutex);
     start_position2 = *msg;
     ROS_INFO("Starting position for Robot 2 received - x: %f, y: %f", msg->x, msg->y);
