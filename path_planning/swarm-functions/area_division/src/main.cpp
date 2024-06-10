@@ -12,6 +12,14 @@ nav_msgs::OccupancyGrid current_map;
 bool map_received = false;
 
 // Callback function for receiving the map
+/**
+ * @brief Callback function for receiving the occupancy grid map.
+ * 
+ * This function is called whenever a new occupancy grid message is received. It updates the
+ * global variable with the latest map data and sets the flag indicating that a map has been received.
+ * 
+ * @param msg The incoming occupancy grid message.
+ */
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     current_map = *msg;
     map_received = true;
@@ -19,7 +27,15 @@ void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
 }
 
 
-
+/**
+ * @brief Get the transformation to the grid origin.
+ * 
+ * This function returns the transformation from the map frame to the grid's origin based on the
+ * origin information provided in the occupancy grid message.
+ * 
+ * @param grid The occupancy grid message.
+ * @return The transformation to the grid origin.
+ */
 tf::Transform getTransformToGridOrigin(const nav_msgs::OccupancyGrid& grid) {
     tf::Transform transform;
 
@@ -36,6 +52,17 @@ tf::Transform getTransformToGridOrigin(const nav_msgs::OccupancyGrid& grid) {
     return transform;
 }
 
+/**
+ * @brief Get the robot's position in the map frame.
+ * 
+ * This function attempts to retrieve the robot's position in the map frame by first transforming
+ * the robot's position from its base frame to the odom frame and then from the odom frame to the map frame.
+ * 
+ * @param listener The transform listener to use for retrieving the transformations.
+ * @param robot_frame The frame ID of the robot's base link.
+ * @param position The position of the robot in the map frame.
+ * @return True if the position was successfully retrieved, otherwise false.
+ */
 bool getRobotPosition(tf::TransformListener &listener, const std::string &robot_frame, geometry_msgs::Point &position) {
     tf::StampedTransform transform_base_to_odom, transform_odom_to_map;
     try {
@@ -60,6 +87,15 @@ bool getRobotPosition(tf::TransformListener &listener, const std::string &robot_
     }
 }
 
+/**
+ * @brief Get the frame IDs of all detected robots.
+ * 
+ * This function retrieves the frame IDs of all detected robots by looking for frames containing
+ * the string "base_link".
+ * 
+ * @param listener The transform listener to use for retrieving the frame IDs.
+ * @return A vector of frame IDs corresponding to the detected robots.
+ */
 std::vector<std::string> getRobotFrames(tf::TransformListener &listener) {
     std::vector<std::string> robot_frames;
     std::vector<std::string> all_frames;
