@@ -98,6 +98,11 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     downsizedGrid.info.height = std::ceil(originalGrid.info.height / roundedFactor);
     downsizedGrid.info.resolution = adjustedResolution;
     downsizedGrid.data.resize(downsizedGrid.info.width * downsizedGrid.info.height);
+            // Calculate origin shift to center the first cell's midpoint under the new resolution
+    double originShift = (roundedFactor * originalResolution) / 2;
+
+    downsizedGrid.info.origin.position.x = originalGrid.info.origin.position.x + originShift - (originalResolution / 2);
+    downsizedGrid.info.origin.position.y = originalGrid.info.origin.position.y + originShift - (originalResolution / 2);
     
     for (int y = 0; y < downsizedGrid.info.height; ++y) {
         for (int x = 0; x < downsizedGrid.info.width; ++x) {
