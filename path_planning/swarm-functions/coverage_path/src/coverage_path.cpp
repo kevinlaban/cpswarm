@@ -79,7 +79,7 @@ nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_gr
  * @return The downsized occupancy grid.
  * @throws std::invalid_argument If the desired resolution is smaller than the original resolution.
  */
-nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution) {
+nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, double desiredResolution, int thresholdValue = 50) {
     double originalResolution = originalGrid.info.resolution;
     
     if (desiredResolution < originalResolution) {
@@ -123,12 +123,12 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
                 }
                 if (foundUnknown) break;
             }
-            if (foundUnknown) {
-                downsizedGrid.data[y * downsizedGrid.info.width + x] = -1; // Mark the entire cell as -1 if any part is unknown
-            } else if (count > 0) {
-                downsizedGrid.data[y * downsizedGrid.info.width + x] = sum / count; // Average of the values
+            
+            int newIndex = y * downsizedGrid.info.width + x;
+            if (foundUnknown || (count > 0 && (sum / count) > thresholdValue)) {
+                downsizedGrid.data[newIndex] = 100;
             } else {
-                downsizedGrid.data[y * downsizedGrid.info.width + x] = -1; // Assign -1 if no valid data was found
+                downsizedGrid.data[newIndex] = 0;
             }
         }
     }
@@ -264,8 +264,8 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     // get area divided per robot
     ROS_DEBUG("Get map of divided area...");
 
-    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40,3);
-    nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.5);
+    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40, 3);
+    nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.3, 40);
     ROS_DEBUG("Grid has been downsized");
     // Publish the padded grid
     ros::Publisher padded_grid_publisher = nh.advertise<nav_msgs::OccupancyGrid>("PaddedGrid", 1, true);
