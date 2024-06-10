@@ -1,8 +1,13 @@
 #include "lib/area_division.h"
 
+
 area_division::area_division ()
 {
-    // read parameters
+    // Initialize the ROS node handle and read optimization parameters from the parameter server.
+    // Parameters include:
+    // - max_iter: Maximum number of iterations (default 1000)
+    // - variate_weight: Weight variation parameter (default 0.01)
+    // - discr: Discrepancy parameter (default 30)
     NodeHandle nh;
     nh.param(this_node::getName() + "/optimizer/iterations", max_iter, 1000);
     nh.param(this_node::getName() + "/optimizer/variate_weight", variate_weight, 0.01);
@@ -11,7 +16,13 @@ area_division::area_division ()
 
 void area_division::divide ()
 {   
-    ROS_INFO("Inside Divide...");
+
+    // Perform area division for fair allocation of grid cells to robots:
+    // - Initialize the necessary parameters and variables.
+    // - Compute the distances of cells from the robots.
+    // - Enter the main loop to attempt the division, adjusting the metrics based on connectivity and fairness.
+    // - Adjust the discrepancy threshold and retry if the division is not successful within max iterations.
+
     // initializations
     int NoTiles = rows*cols;
     double fairDivision = 1.0 / nr;
@@ -24,7 +35,6 @@ void area_division::divide ()
         termThr=0;
     }
     ROS_DEBUG("%d free cells.", effectiveSize);
-    ROS_INFO("Inside Divide Part 1...");
     // initialize distances of cells to cps
     vector<valarray<double>> AllDistances(nr, valarray<double>(rows*cols));
     for (int i=0; i<rows; i++) {
@@ -36,26 +46,19 @@ void area_division::divide ()
     }
     ROS_DEBUG("Computed distances from CPSs to all cells.");
 
-    ROS_INFO("Inside Divide Part 2...");
     vector<valarray<double>> MetricMatrix = AllDistances;
 
     // perform area division
     success = false;
     while (termThr<=discr && !success) {
         ROS_DEBUG("Try division with discrepancy %d<=%d.", termThr, discr);
-        ROS_INFO("Inside Divide Part 3...");
         // initializations
         double downThres = ((double)NoTiles-(double)termThr*(nr-1)) / (double)(NoTiles*nr);
-        ROS_INFO("Inside Divide Part 3.1...");
         double upperThres = ((double)NoTiles+termThr) / (double)(NoTiles*nr);
-        ROS_INFO("Inside Divide Part 3.2...");
         success = true;
-        ROS_INFO("Inside Divide Part 3.3...");
         // main optimization loop
         int iter = 0;
-        ROS_INFO("Inside Divide Part 3.4...");
         while (iter <= max_iter) {
-            ROS_INFO("Inside Divide Part 4...");
             assign(MetricMatrix);
             // find connected areas
             vector<valarray<float>> ConnectedMultiplierList(nr);
@@ -64,7 +67,6 @@ void area_division::divide ()
             for (int r=0; r<nr; r++) {
                 valarray<float> ConnectedMultiplier(1, rows*cols);
                 regions[r] = true;
-                ROS_INFO("Inside Divide Part 5...");
                 connected_components cc(BWlist[r], rows, cols, true);
                 valarray<int> Ilabel = cc.compactLabeling();
                 // at least one unconnected regions among r-robot's regions is found
@@ -142,6 +144,12 @@ void area_division::divide ()
 
 nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, string cps)
 {
+    // Create a new grid map with assigned cells:
+    // - Copy the input map to the assigned map.
+    // - Iterate through each cell, marking it as free if assigned to the specified cps,
+    //   and as occupied if assigned to other cpss.
+    // - Update the header timestamps for the new grid map.
+
     // create new grid map
     nav_msgs::OccupancyGrid assigned;
     assigned = map;
@@ -168,6 +176,11 @@ nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, st
 
 void area_division::initialize_cps (std::map<std::string, std::vector<int>> cpss)
 {
+    // Initialize cps's from the given map:
+    // - Reset relevant variables and data structures.
+    // - Iterate through the provided cps map, placing each cps into the grid and internal data structures.
+    // - Count the total number of cps.
+
     // initialize
     nr = 0;
     cps.clear();
@@ -207,6 +220,11 @@ void area_division::initialize_cps (std::map<std::string, std::vector<int>> cpss
 
 void area_division::initialize_map (int r, int c, vector<signed char> src)
 {
+    // Initialize the map with given rows, columns, and source grid data:
+    // - Set the number of rows and columns.
+    // - Copy the source grid data to the internal gridmap.
+    // - Count the number of occupied cells (grid cells with a value >= 40).
+
     // initialization
     rows = r;
     cols = c;
@@ -225,40 +243,35 @@ void area_division::initialize_map (int r, int c, vector<signed char> src)
         //     gridmap[i]=0;
 
     ROS_DEBUG("There are %d occupied cells.", ob);
-    //ROS_INFO(" %d gridmap", ob);
 }
 
 void area_division::assign (vector<valarray<double>> matrix)
 {
-    ROS_INFO("Inside Assign Part 1...");
+    // Assign free grid cells to robots based on a metric matrix:
+    // - Initialize the BWlist for each robot and set the initial positions.
+    // - Iterate over each grid cell, assigning it to the robot with the lowest metric value.
+    // - Mark obstacle cells appropriately
     BWlist.resize(nr);
     for (int r=0; r<nr; r++) {
-        ROS_INFO("Inside Assign Part 2...");
         BWlist[r].resize(rows*cols);
         BWlist[r][cps[r][1] * cols + cps[r][0]] = 1;
     }
-    ROS_INFO("Inside Assign Part 3...");
     ArrayOfElements.clear();
     ArrayOfElements.resize(nr);
-    ROS_INFO("Inside Assign Part 4...");
     for (int i=0; i<rows; i++) {
         for (int j=0; j<cols; j++) {
-            //ROS_INFO("Inside Assign Part 5...");
             int idx=i*cols+j;
             // free grid cell, assign to a robot
             if (gridmap[idx] < 40) {   //TUNABLE
                 // find index of robot that has lowest metric value
-                //ROS_INFO("Inside Assign Part 5.55555...");
                 double minV = matrix[0][idx];
                 int indMin = 0;
                 for (int r=1; r<nr; r++) {
-                    //ROS_INFO("Inside Assign Part 6...");
                     if (matrix[r][idx] <= minV) {
                         minV = matrix[r][idx];
                         indMin = r;
                     }
                 }
-                //ROS_INFO("Inside Assign Part 7...");
                 // store assignment
                 A[idx] = indMin;
                 BWlist[indMin][idx] = 1;
@@ -276,6 +289,11 @@ void area_division::assign (vector<valarray<double>> matrix)
 
 valarray<float> area_division::CalcConnectedMultiplier(valarray<float> dist1, valarray<float> dist2)
 {
+    // Calculate the connected multiplier matrix based on the difference between two distance matrices:
+    // - dist1 and dist2: Input distance matrices.
+    // - returnM: The resulting multiplier matrix.
+    // - MaxV and MinV: Variables to track the maximum and minimum values in the difference matrix.
+    // Normalize the difference matrix to a specified range using variate_weight.
     valarray<float> returnM(rows*cols);
     float MaxV = 0;
     float MinV = numeric_limits<float>::max();
@@ -298,6 +316,9 @@ valarray<float> area_division::CalcConnectedMultiplier(valarray<float> dist1, va
 
 valarray<double> area_division::FinalUpdateOnMetricMatrix(double CM, valarray<double> curentONe, valarray<float> CC)
 {
+    // Update the metric matrix using the provided parameters
+    // The updated metric matrix (MMnew) is calculated by element-wise multiplying 
+    // curentONe with CM and CC.
     valarray<double> MMnew(rows*cols);
 
     for (int i=0; i<MMnew.size(); ++i) {
@@ -310,6 +331,11 @@ valarray<double> area_division::FinalUpdateOnMetricMatrix(double CM, valarray<do
 
 bool area_division::isThisAGoalState(int thres)
 {
+    // Check if the current state meets the goal criteria:
+    // - Determine the maximum and minimum number of cells assigned to any region.
+    // - Verify that all regions are assigned.
+    // - Return true if the difference between max and min assigned cells is within the given threshold.
+
     int maxCellsAss = 0;
     int minCellsAss = numeric_limits<int>::max();
 
