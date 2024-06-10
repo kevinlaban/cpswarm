@@ -330,17 +330,13 @@ int main (int argc, char **argv)
     // ros::Subscriber robot3_sub = nh.subscribe("robot3_grid", 10, robot3GridCallback);
 
     // Subscriber for the starting position of the Robots
-    ros::Subscriber startPosSub_R1 = nh.subscribe("robot1_starting_pos", 10, robot1StartPositionCallback);
+    //ros::Subscriber startPosSub_R1 = nh.subscribe("robot1_starting_pos", 10, robot1StartPositionCallback);
     // ros::Subscriber startPosSub_R2 = nh.subscribe("robot2_starting_pos", 10, robot2StartPositionCallback);
     // ros::Subscriber startPosSub_R3 = nh.subscribe("robot3_starting_pos", 10, robot3StartPositionCallback);
 
     // Create the service
     ros::ServiceServer service = nh.advertiseService("/generate_path", generate_path_service);
-
-
-
     ROS_INFO("/generate_path service server available");
-
     spin();
 
     return 0;
