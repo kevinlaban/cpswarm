@@ -1,9 +1,9 @@
 # coverage_path
 [![Build Status](http://build.ros.org/buildStatus/icon?job=Ksrc_uX__coverage_path__ubuntu_xenial__source)](http://build.ros.org/job/Ksrc_uX__coverage_path__ubuntu_xenial__source/)
 
-This package generates an optimal path to cover a given area with a cyber physical system (CPS). This package has been adapted by group 13, 15 and 17 for RO47007 Multidisciplinary Project 2023-2024 of the TU Delft.
+This package generates an optimal path to cover a given area with a cyber physical system (CPS). This package has been adapted by group 13, 15 and 17 for RO47007 Multidisciplinary Project 2023-2024 of the TU Delft. This node has been changed into a service by group 17.
 
-This package was adapted by Felipe Bononi Bello (fbononibello@gmail.com), Ming Da Yang (m.d.yang@student.tudelft.nl) and Kevin Laban (K.A.A.Laban@student.tudelft.nl).
+This package was adapted by Felipe Bononi Bello (fbononibello@gmail.com), Ming Da Yang (m.d.yang@student.tudelft.nl) and Kevin Laban (K.A.A.Laban@student.tudelft.nl). 
 
 
 ## Dependencies
