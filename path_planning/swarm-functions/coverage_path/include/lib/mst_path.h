@@ -34,7 +34,7 @@ public:
      * @return Whether the generation was successful.
      */
     bool generate_path (geometry_msgs::Point start);
-
+    bool isNodeValid (const vector<unordered_set<int>> nodes, int index);
     /**
      * @brief Get the complete path.
      * @return The path as vector of poses.
@@ -153,6 +153,7 @@ private:
      * @brief Whether the sweeping pattern is vertical or horizontal.
      */
     bool vertical;
+    
 };
 
 #endif // MST_PATH_H

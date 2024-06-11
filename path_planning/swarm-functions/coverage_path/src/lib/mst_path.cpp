@@ -3,7 +3,9 @@
 mst_path::mst_path ()
 {
 }
-
+bool mst_path::isNodeValid (const vector<unordered_set<int>> nodes,int index) {
+    return (index >= 0 && index < nodes.size() && nodes[index].size() > 0);
+}
 bool mst_path::generate_path (geometry_msgs::Point start)
 {
     // reset counter of current waypoint
@@ -23,6 +25,7 @@ bool mst_path::generate_path (geometry_msgs::Point start)
 
     start_rt.x = (start.x * cos(rotation) - start.y * sin(rotation) - map.info.origin.position.x) / map.info.resolution;
     start_rt.y = (start.x * sin(rotation) + start.y * cos(rotation) - map.info.origin.position.y) / map.info.resolution;
+    ROS_INFO("RT start coordinates: x=%.2f, y=%.2f", start_rt.x, start_rt.y);
     // start_rt.x=start.x;
     // start_rt.y=start.y;
     // starting bound on map boundary, shift a bit inside to allow
@@ -36,6 +39,24 @@ bool mst_path::generate_path (geometry_msgs::Point start)
     }
     // convert start point to cell index
     int start_idx = round(2 * round2idx(start_rt.y) * 2 * map.info.width + 2 * round2idx(start_rt.x));
+
+    const int max_attempts = 10;
+    int attempt = 0;
+    while (!isNodeValid(nodes, start_idx) && attempt < max_attempts) {
+        ROS_WARN("Invalid start node at (%.2f, %.2f). Adjusting...", start_rt.x, start_rt.y);
+        start_rt.x += 0.1;
+        //start_rt.y += 0.1;
+        start_idx = round(2 * round2idx(start_rt.y) * 2 * map.info.width + 2 * round2idx(start_rt.x));
+        attempt++;
+    }
+
+    if (!isNodeValid(nodes, start_idx)) {
+        ROS_ERROR("Failed to find a valid starting node after %d attempts.", max_attempts);
+        return false;
+    }
+
+    ROS_INFO("Valid start node found at index %d after %d attempts.", start_idx, attempt);
+
     // make sure cell is not occupied
     unordered_set<int> checked;
     queue<int> to_check;
@@ -48,6 +69,9 @@ bool mst_path::generate_path (geometry_msgs::Point start)
         // check next cell
         current = to_check.front();
         to_check.pop();
+        ROS_INFO("Current location:%d",current);
+        ROS_INFO("Nodes size:%ld",nodes.size());
+        ROS_INFO("Current Nodes size:%ld",nodes[current].size());
         if (current >= 0 && current < nodes.size() && nodes[current].size() > 0) {
     // safe to proceed
         } else {
