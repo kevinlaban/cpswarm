@@ -264,8 +264,8 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     // get area divided per robot
     ROS_DEBUG("Get map of divided area...");
 
-    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40, 2);
-    nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.3, 40);
+    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40, 3);
+    nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.4, 40);
     ROS_DEBUG("Grid has been downsized");
     // Publish the padded grid
     ros::Publisher padded_grid_publisher = nh.advertise<nav_msgs::OccupancyGrid>("PaddedGrid", 1, true);
