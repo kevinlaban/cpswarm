@@ -14,6 +14,37 @@ bool map_received = false;
 
 bool do_division = false;
 
+nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_grid, int threshold, int iterations) {
+    nav_msgs::OccupancyGrid padded_grid = input_grid;
+    int width = input_grid.info.width;
+    int height = input_grid.info.height;
+
+    for (int it = 0; it < iterations; ++it) {
+        nav_msgs::OccupancyGrid temp_grid = padded_grid;
+
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                int index = y * width + x;
+                if (padded_grid.data[index] > threshold) {
+                    for (int dy = -1; dy <= 1; ++dy) {
+                        for (int dx = -1; dx <= 1; ++dx) {
+                            int new_x = x + dx;
+                            int new_y = y + dy;
+                            if (new_x >= 0 && new_x < width && new_y >= 0 && new_y < height) {
+                                int new_index = new_y * width + new_x;
+                                temp_grid.data[new_index] = 100;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        padded_grid = temp_grid;
+    }
+
+    return padded_grid;
+}
+
 // Callback function for receiving the map
 /**
  * @brief Callback function for receiving the occupancy grid map.
@@ -190,6 +221,8 @@ int main(int argc, char **argv) {
         if (map_received && do_division) {
             ROS_INFO("Processing received map...");
             do_division = false;
+
+            current_map= padOccupancyGrid(current_map,50,1);
 
             // Initialize the map in the area_division object
             ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
