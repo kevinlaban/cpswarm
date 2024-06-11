@@ -14,6 +14,47 @@ bool map_received = false;
 
 bool do_division = false;
 
+
+// Function to fill in obstacles when the neighbours has 5 or more neighbouring obstacles in the occupancy grid
+nav_msgs::OccupancyGrid neighbourObstacleFiller(const nav_msgs::OccupancyGrid& originalGrid) {
+    nav_msgs::OccupancyGrid modifiedGrid = originalGrid; // Copy the original grid
+    int width = originalGrid.info.width;
+    int height = originalGrid.info.height;
+
+    // Loop through each cell in the grid
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int index = y * width + x;
+            int obstacleCount = 0;
+
+            // Check all neighboring cells
+            for (int dy = -1; dy <= 1; ++dy) {
+                for (int dx = -1; dx <= 1; ++dx) {
+                    if (dx == 0 && dy == 0) continue; // Skip the current cell itself
+
+                    int nx = x + dx;
+                    int ny = y + dy;
+
+                    // Make sure we are not out of bounds
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        int neighborIndex = ny * width + nx;
+                        if (originalGrid.data[neighborIndex] == 100) {
+                            obstacleCount++;
+                        }
+                    }
+                }
+            }
+
+            // If 5 or more neighbors are obstacles, set this cell to be an obstacle too
+            if (obstacleCount >= 5) {
+                modifiedGrid.data[index] = 100;
+            }
+        }
+    }
+
+    return modifiedGrid;
+}
+
 nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_grid, int threshold, int iterations) {
     nav_msgs::OccupancyGrid padded_grid = input_grid;
     int width = input_grid.info.width;
