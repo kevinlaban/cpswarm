@@ -99,10 +99,10 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     downsizedGrid.info.resolution = adjustedResolution;
     downsizedGrid.data.resize(downsizedGrid.info.width * downsizedGrid.info.height);
             // Calculate origin shift to center the first cell's midpoint under the new resolution
-    double originShift = (roundedFactor * originalResolution) / 2;
+    // double originShift = (roundedFactor * originalResolution) / 2;
 
-    downsizedGrid.info.origin.position.x = originalGrid.info.origin.position.x + originShift - (originalResolution / 2);
-    downsizedGrid.info.origin.position.y = originalGrid.info.origin.position.y + originShift - (originalResolution / 2);
+    // downsizedGrid.info.origin.position.x = originalGrid.info.origin.position.x + originShift - (originalResolution / 2);
+    // downsizedGrid.info.origin.position.y = originalGrid.info.origin.position.y + originShift - (originalResolution / 2);
     
     for (int y = 0; y < downsizedGrid.info.height; ++y) {
         for (int x = 0; x < downsizedGrid.info.width; ++x) {
@@ -264,7 +264,7 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     // get area divided per robot
     ROS_DEBUG("Get map of divided area...");
 
-    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40, 3);
+    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40, 2);
     nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.3, 40);
     ROS_DEBUG("Grid has been downsized");
     // Publish the padded grid
