@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
 
     ros::ServiceServer service = nh.advertiseService("/area_division/divide", divideCallback);
 
-    ros::Rate loop_rate(0.1); // 1 Hz
+    ros::Rate loop_rate(5); // 1 Hz
     while (ros::ok()) {
         if (map_received && do_division) {
             ROS_INFO("Processing received map...");
