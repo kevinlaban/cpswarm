@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/Point.h>
+#include "std_srvs/Empty.h"
 #include <tf/transform_listener.h>
 #include <vector>
 #include <map>
@@ -10,6 +11,8 @@
 // Global variables to store the current map and a flag to check if the map is received
 nav_msgs::OccupancyGrid current_map;
 bool map_received = false;
+
+bool do_division = false;
 
 // Callback function for receiving the map
 /**
@@ -113,6 +116,18 @@ std::vector<std::string> getRobotFrames(tf::TransformListener &listener) {
     return robot_frames;
 }
 
+bool divideCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+{
+    // Handle the service request here
+    ROS_INFO("Received service request on /area_division/divide");
+    
+    if (do_division == false){
+        do_division = true;
+    }
+
+    return true;
+}
+
 int main(int argc, char **argv) {
     // Initialize ROS
     ros::init(argc, argv, "area_division_node");
@@ -168,10 +183,13 @@ int main(int argc, char **argv) {
     // Subscriber for the occupancy grid map
     ros::Subscriber map_sub = nh.subscribe("/map", 10, mapCallback);
 
+    ros::ServiceServer service = nh.advertiseService("/area_division/divide", divideCallback);
+
     ros::Rate loop_rate(0.1); // 1 Hz
     while (ros::ok()) {
-        if (map_received) {
+        if (map_received && do_division) {
             ROS_INFO("Processing received map...");
+            do_division = false;
 
             // Initialize the map in the area_division object
             ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
