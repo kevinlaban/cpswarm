@@ -52,6 +52,7 @@ tf::Transform getTransformToGridOrigin(const nav_msgs::OccupancyGrid& grid) {
     return transform;
 }
 
+
 /**
  * @brief Get the robot's position in the map frame.
  * 

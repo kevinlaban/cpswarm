@@ -25,6 +25,7 @@ geometry_msgs::Point start_position1;
 geometry_msgs::Point start_position2;
 geometry_msgs::Point start_position3;
 
+
 /**
  * @brief Pads the input occupancy grid by expanding obstacles.
  * 
@@ -98,11 +99,10 @@ nav_msgs::OccupancyGrid parseGrid(const nav_msgs::OccupancyGrid& originalGrid, d
     downsizedGrid.info.height = std::ceil(originalGrid.info.height / roundedFactor);
     downsizedGrid.info.resolution = adjustedResolution;
     downsizedGrid.data.resize(downsizedGrid.info.width * downsizedGrid.info.height);
-            // Calculate origin shift to center the first cell's midpoint under the new resolution
-    double originShift = (roundedFactor * originalResolution) / 2;
-
-    downsizedGrid.info.origin.position.x = originalGrid.info.origin.position.x + originShift - (originalResolution / 2);
-    downsizedGrid.info.origin.position.y = originalGrid.info.origin.position.y + originShift - (originalResolution / 2);
+    // Calculate origin shift to center the first cell's midpoint under the new resolution
+    // double originShift = (roundedFactor * originalResolution) / 2;
+    // downsizedGrid.info.origin.position.x = originalGrid.info.origin.position.x + originShift - (originalResolution / 2);
+    // downsizedGrid.info.origin.position.y = originalGrid.info.origin.position.y + originShift - (originalResolution / 2);
     
     for (int y = 0; y < downsizedGrid.info.height; ++y) {
         for (int x = 0; x < downsizedGrid.info.width; ++x) {
@@ -246,9 +246,6 @@ bool generate_path_service(coverage_path::GeneratePath::Request &req, coverage_p
     return true;
 }
 
-
-
-
 /**
  * @brief Generate an optimal coverage path for a given area.
  * @param start The starting position of the path.
@@ -264,8 +261,8 @@ bool generate_path (geometry_msgs::Point start, const nav_msgs::OccupancyGrid& r
     // get area divided per robot
     ROS_DEBUG("Get map of divided area...");
 
-    nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40,3);
-    nav_msgs::OccupancyGrid area = parseGrid(padded_grid,0.5);
+    //nav_msgs::OccupancyGrid padded_grid=padOccupancyGrid(robot_occupancy_map,40,2);
+    nav_msgs::OccupancyGrid area = parseGrid(robot_occupancy_map,0.5);
     ROS_DEBUG("Grid has been downsized");
     // ROS_INFO("Occupancy Grid Info:");
     // ROS_INFO("  Width: %d", area.info.width);
