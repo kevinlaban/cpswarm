@@ -21,10 +21,10 @@ bool mst_path::generate_path (geometry_msgs::Point start)
     // rotate and translate
     geometry_msgs::Point start_rt;
 
-    // start_rt.x = (start.x * cos(rotation) - start.y * sin(rotation) - map.info.origin.position.x) / map.info.resolution;
-    // start_rt.y = (start.x * sin(rotation) + start.y * cos(rotation) - map.info.origin.position.y) / map.info.resolution;
-    start_rt.x=start.x;
-    start_rt.y=start.y;
+    start_rt.x = (start.x * cos(rotation) - start.y * sin(rotation) - map.info.origin.position.x) / map.info.resolution;
+    start_rt.y = (start.x * sin(rotation) + start.y * cos(rotation) - map.info.origin.position.y) / map.info.resolution;
+    // start_rt.x=start.x;
+    // start_rt.y=start.y;
     // starting bound on map boundary, shift a bit inside to allow
     if (start_rt.x == map.info.width)
         start_rt.x -= 0.1;
