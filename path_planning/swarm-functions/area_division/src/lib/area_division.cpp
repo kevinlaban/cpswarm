@@ -9,7 +9,7 @@ area_division::area_division ()
     // - variate_weight: Weight variation parameter (default 0.01)
     // - discr: Discrepancy parameter (default 30)
     NodeHandle nh;
-    nh.param(this_node::getName() + "/optimizer/iterations", max_iter, 1000);
+    nh.param(this_node::getName() + "/optimizer/iterations", max_iter, 300);
     nh.param(this_node::getName() + "/optimizer/variate_weight", variate_weight, 0.01);
     nh.param(this_node::getName() + "/optimizer/discrepancy", discr, 30);
 }
@@ -126,7 +126,7 @@ bool area_division::divide ()
         // could not find area division
         if (iter >= max_iter) {
             max_iter = max_iter/2;
-            success = false;
+            // success = false;
 
             ROS_DEBUG("Failed to divide in %d iterations.", iter);
 

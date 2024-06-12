@@ -206,7 +206,7 @@ bool divideCallback(std_srvs::SetBool::Request& request, std_srvs::SetBool::Resp
 
     ros::Time start_time = ros::Time::now();
 
-    while (!done_division && !division_failed && (ros::Time::now() - start_time).toSec() < 60.0){
+    while (!done_division && (ros::Time::now() - start_time).toSec() < 60.0){
         // Empty on purpose
     }
 
@@ -285,13 +285,16 @@ int main(int argc, char **argv) {
 
     ros::ServiceServer service = nh.advertiseService("/area_division/divide", divideCallback);
 
+    ros::AsyncSpinner spinner(1); // Use 1 thread
+    spinner.start();
+
     ros::Rate loop_rate(5); // 1 Hz
     while (ros::ok()) {
         if (map_received && do_division) {
             ROS_INFO("Processing received map...");
             do_division = false;
 
-            current_map= padOccupancyGrid(current_map,50,1);
+            current_map= padOccupancyGrid(current_map,50,2);
 
             // Initialize the map in the area_division object
             ad.initialize_map(current_map.info.width, current_map.info.height, current_map.data);
@@ -359,6 +362,8 @@ int main(int argc, char **argv) {
         ros::spinOnce();
         loop_rate.sleep();
     }
+
+    ros::waitForShutdown();
 
     return 0;
 }
