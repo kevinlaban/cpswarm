@@ -14,7 +14,7 @@ area_division::area_division ()
     nh.param(this_node::getName() + "/optimizer/discrepancy", discr, 30);
 }
 
-void area_division::divide ()
+bool area_division::divide ()
 {   
 
     // Perform area division for fair allocation of grid cells to robots:
@@ -140,6 +140,8 @@ void area_division::divide ()
 
     if (success == false)
         ROS_ERROR("Area division failed!");
+
+    return success;
 }
 
 nav_msgs::OccupancyGrid area_division::get_grid (nav_msgs::OccupancyGrid map, string cps)

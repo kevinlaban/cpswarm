@@ -7,12 +7,15 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "std_srvs/SetBool.h"
 
 // Global variables to store the current map and a flag to check if the map is received
 nav_msgs::OccupancyGrid current_map;
 bool map_received = false;
 
 bool do_division = false;
+bool done_division = false;
+bool division_failed = false;
 
 nav_msgs::OccupancyGrid padOccupancyGrid(const nav_msgs::OccupancyGrid& input_grid, int threshold, int iterations) {
     nav_msgs::OccupancyGrid padded_grid = input_grid;
@@ -147,13 +150,38 @@ std::vector<std::string> getRobotFrames(tf::TransformListener &listener) {
     return robot_frames;
 }
 
-bool divideCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+
+
+bool divideCallback(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response)
 {
-    // Handle the service request here
+    // Handle the service request
     ROS_INFO("Received service request on /area_division/divide");
+    done_division = false;
+    division_failed = false;
     
     if (do_division == false){
         do_division = true;
+    }
+
+    ros::Time start_time = ros::Time::now();
+
+    while (!done_division && !division_failed && (ros::Time::now() - start_time).toSec() < 60.0){
+        // Empty on purpose
+    }
+
+    if (!done_division) {
+        ROS_ERROR("AREA_DIVIDE: Timeout after 1 minute");
+        response.success = false;
+        response.message = "Timeout after 1 minute";
+    }else if (division_failed) {
+        ROS_ERROR("AREA_DIVIDE: DIVISION FAILED");
+        response.success = false;
+        response.message = "Division failed";
+    }
+    
+     else {
+        response.success = true;
+        response.message = "Division completed successfully";
     }
 
     return true;
@@ -251,7 +279,8 @@ int main(int argc, char **argv) {
             ad.initialize_cps(updated_cps_positions);
             ROS_INFO("Before division...");
             // Perform area division
-            ad.divide();
+            division_failed = !ad.divide(); // Failed = not (divide -> returns success)
+            
             ROS_INFO("Post division...");
 
             // Create geometry_msgs::Point messages for starting positions and publish divided maps
@@ -282,6 +311,8 @@ int main(int argc, char **argv) {
 
             map_received = false; // Reset the flag
             ROS_INFO("Map processing complete.");
+
+            done_division = true;
         }
 
         ros::spinOnce();

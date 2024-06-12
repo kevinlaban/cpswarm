@@ -34,7 +34,7 @@ public:
     /**
      * @brief Perform the area division.
      */
-    void divide ();
+    bool divide ();
 
     /**
      * @brief Get the region assigned to a CPS.
